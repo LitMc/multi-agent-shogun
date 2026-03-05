@@ -588,7 +588,7 @@ language: ja
 # シェル設定
 # bash: bash用プロンプト（デフォルト）
 # zsh: zsh用プロンプト
-shell: bash
+shell: zsh
 
 # スキル設定
 skill:
@@ -746,7 +746,7 @@ RESULTS+=("実行権限: OK")
 log_step "STEP 10: alias設定"
 
 # alias追加対象ファイル
-BASHRC_FILE="$HOME/.bashrc"
+BASHRC_FILE="$HOME/.zshrc"
 
 # css/csm を関数として定義（destroy-unattached で自動掃除）
 # - 複数端末から接続しても画面サイズが干渉しない
