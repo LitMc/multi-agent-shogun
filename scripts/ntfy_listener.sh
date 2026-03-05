@@ -165,6 +165,9 @@ while true; do
             continue
         fi
 
+        # 改善1: 受信即時ACK — 将軍の処理を待たずに殿に受信確認を通知
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "📱受信: ${MSG:0:20}..." shogun 2>/dev/null || true
+
         # Auto-reply removed — shogun replies directly after processing.
 
         # Wake shogun via inbox (ntfy処理は将軍が直接受信)

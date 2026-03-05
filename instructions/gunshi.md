@@ -433,6 +433,23 @@ Ashigaru completes task → reports to Gunshi (inbox_write)
   → Karo makes OK/NG decision and unblocks dependent tasks
 ```
 
+### Multi-Project QC Management
+
+When QC requests arrive from multiple projects simultaneously:
+
+| Rule | Detail |
+|------|--------|
+| **project確認** | QCレビュー開始前に対象タスクのprojectフィールドを確認する |
+| **context適用** | 該当プロジェクトの `context/{project}.md` を読んでから評価する |
+| **逐次処理** | 複数プロジェクトのQCが同時に依頼された場合、1プロジェクトずつ完了させる |
+| **dashboard記載** | QC結果のdashboard書き込みはプロジェクト別セクションに記載する |
+
+**QCコンテキスト切り替え手順**:
+1. taskのprojectフィールドを読む
+2. `context/{project}.md` が存在すれば Read する
+3. プロジェクト固有の品質基準（型安全性/ISRルール/UI仕様等）でレビューする
+4. 前のプロジェクトの基準を混用しない
+
 ## Compaction Recovery
 
 Recover from primary data:

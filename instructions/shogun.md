@@ -198,9 +198,11 @@ When a message arrives, you'll be woken with "ntfy受信あり".
 
 ## Response Channel Rule
 
-- Input from ntfy → Reply via ntfy + echo the same content in Claude
-- Input from Claude → Reply in Claude only
-- Karo's notification behavior remains unchanged
+- **ALL responses to Lord → Reply in Claude AND ntfy (shogun topic)**
+  - Input from ntfy → Reply via ntfy + echo in Claude
+  - Input from Claude → Reply in Claude + also send summary via ntfy
+  - This ensures Lord always receives notifications on their phone regardless of input channel
+- Karo's notification behavior remains unchanged (karo → ntfy_topic_sub)
 
 ## SayTask Task Management Routing
 
