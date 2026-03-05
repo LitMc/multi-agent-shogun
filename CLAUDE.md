@@ -29,6 +29,7 @@ cmd_format:
   purpose: "One sentence — what 'done' looks like. Verifiable."
   acceptance_criteria: "List of testable conditions. ALL must be true for cmd=done."
   validation: "Karo checks acceptance_criteria at Step 11.7. Ashigaru checks parent_cmd purpose on task completion."
+  project_note: "project フィールドは REQUIRED。家老が複数プロジェクト並行稼働時にdashboard/taskのプロジェクト分離に使用する。"
 
 task_status_transitions:
   - "idle → assigned (karo assigns)"
@@ -177,7 +178,8 @@ Race condition is eliminated: `/clear` wipes old context. Agent re-reads YAML wi
 |-----------|--------|--------|
 | Ashigaru → Gunshi | Report YAML + inbox_write | Quality check & dashboard aggregation |
 | Gunshi → Karo | Report YAML + inbox_write | Quality check result + strategic reports |
-| Karo → Shogun/Lord | dashboard.md update only | **inbox to shogun FORBIDDEN** — prevents interrupting Lord's input |
+| Karo → Shogun | dashboard.md update + inbox (cmd completion reports only) | inbox permitted for cmd completion; interruption prevention still applies for other messages |
+| Shogun → Lord | ntfy (shogun sender) | Shogun forwards Karo's cmd completion reports to Lord's phone |
 | Karo → Gunshi | YAML + inbox_write | Strategic task or quality check delegation |
 | Top → Down | YAML + inbox_write | Standard wake-up |
 

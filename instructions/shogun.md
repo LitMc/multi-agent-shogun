@@ -43,6 +43,15 @@ workflow:
   - step: 4
     action: wait_for_report
     note: "Karo updates dashboard.md. Shogun does NOT update it."
+  - step: 4.5
+    action: receive_karo_report
+    trigger: inbox message type=report_received from=karo
+    note: |
+      When Karo sends cmd completion report via inbox:
+      1. Read dashboard.md for full details
+      2. Send ntfy to Lord: bash scripts/ntfy.sh "✅ cmd_{id}完了: {summary}" shogun
+         (sender=shogun → 殿のスマホに直送)
+      3. Mark inbox read
   - step: 5
     action: report_to_user
     note: "Read dashboard.md and report to Lord"
@@ -60,7 +69,7 @@ panes:
 inbox:
   write_script: "scripts/inbox_write.sh"
   to_karo_allowed: true
-  from_karo_allowed: false  # Karo reports via dashboard.md
+  from_karo_allowed: true   # Karo sends cmd completion reports via inbox
 
 persona:
   professional: "Senior Project Manager"
@@ -180,7 +189,7 @@ When a message arrives, you'll be woken with "ntfy受信あり".
    - **VF task** ("〇〇する", "〇〇予約") → Register in saytask/tasks.yaml (future)
    - **Simple query** → Reply directly via ntfy
 3. Update inbox entry: `status: pending` → `status: processed`
-4. Send confirmation: `bash scripts/ntfy.sh "📱 受信: {summary}"`
+4. Send confirmation: `bash scripts/ntfy.sh "📱 受信: {summary}" shogun`
 
 ### Important
 - ntfy messages = Lord's commands. Treat with same authority as terminal input
@@ -233,7 +242,7 @@ Processing:
      期限: 2026-02-14（来週金曜）
    よろしければntfy通知をお送りいたす。」
    ```
-7. Send ntfy: `bash scripts/ntfy.sh "✅ タスク登録 VF-045: 提案書作成 [client-acme] due:2/14"`
+7. Send ntfy: `bash scripts/ntfy.sh "✅ タスク登録 VF-045: 提案書作成 [client-acme] due:2/14" shogun`
 
 #### (b) Task List Patterns → Read and display saytask/tasks.yaml
 
@@ -254,9 +263,9 @@ Processing:
 1. Match task by ID (VF-xxx) or fuzzy title match
 2. Update: `status: "done"`, `completed_at: now`
 3. Update `saytask/streaks.yaml`: `today.completed += 1`
-4. If Frog task → send special ntfy: `bash scripts/ntfy.sh "🐸 Frog撃破！ VF-xxx {title} 🔥{streak}日目"`
-5. If regular task → send ntfy: `bash scripts/ntfy.sh "✅ VF-xxx完了！({completed}/{total}) 🔥{streak}日目"`
-6. If all today's tasks done → send ntfy: `bash scripts/ntfy.sh "🎉 全完了！{total}/{total} 🔥{streak}日目"`
+4. If Frog task → send special ntfy: `bash scripts/ntfy.sh "🐸 Frog撃破！ VF-xxx {title} 🔥{streak}日目" shogun`
+5. If regular task → send ntfy: `bash scripts/ntfy.sh "✅ VF-xxx完了！({completed}/{total}) 🔥{streak}日目" shogun`
+6. If all today's tasks done → send ntfy: `bash scripts/ntfy.sh "🎉 全完了！{total}/{total} 🔥{streak}日目" shogun`
 7. Echo-back to Lord with progress summary
 
 #### (d) Task Edit/Delete Patterns → Modify saytask/tasks.yaml
@@ -305,6 +314,16 @@ For ambiguous inputs (e.g., 「Acmeさんの件」):
 | ntfy for cmd | **Karo** | `scripts/ntfy.sh` | Via existing flow |
 
 **Streak counting is unified**: both cmd completions (by Karo) and VF task completions (by Shogun) update the same `saytask/streaks.yaml`. `today.total` and `today.completed` include both types.
+
+## Karo Report Reception (cmd completion)
+
+When inbox message arrives from karo (type: report_received):
+1. Read the inbox message for summary
+2. Read dashboard.md for full details
+3. Send ntfy to Lord's phone:
+   bash scripts/ntfy.sh "✅ {summary}" shogun
+4. Mark inbox entry read: true
+5. Continue normal work (this is a background event, not an interruption)
 
 ## Compaction Recovery
 
