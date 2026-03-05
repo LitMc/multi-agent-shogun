@@ -206,7 +206,11 @@ should_throttle_nudge() {
     effective_cli=$(get_effective_cli_type)
 
     local cooldown_sec="${NUDGE_COOLDOWN_SEC:-60}"
-    if [[ "$effective_cli" == "codex" ]]; then
+    if [[ "$AGENT_ID" == "shogun" ]]; then
+        # Shogun receives ntfy_received messages from the lord.
+        # These must not be throttled — use minimal cooldown (10s).
+        cooldown_sec="${NUDGE_COOLDOWN_SEC_SHOGUN:-10}"
+    elif [[ "$effective_cli" == "codex" ]]; then
         cooldown_sec="${NUDGE_COOLDOWN_SEC_CODEX:-300}"
     elif [[ "$effective_cli" == "claude" ]]; then
         # Claude Code: same cooldown as default (60s).
@@ -471,6 +475,14 @@ send_cli_command() {
     # Shogun is controlled by the Lord; keystroke injection can clobber human input.
     if [ "$AGENT_ID" = "shogun" ]; then
         echo "[$(date)] [SKIP] shogun: suppressing CLI command injection ($cmd)" >&2
+        # 改善3: /clear の代わりに ntfy でフォールバック通知
+        # shogunがcontext limit等で応答不能の場合、殿に直接ntfy通知を送る。
+        if [[ "$cmd" == "/clear" ]]; then
+            local unread_ntfy
+            unread_ntfy=$(grep -c 'read: false' "$INBOX" 2>/dev/null || echo "?")
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "🚨 将軍が${unread_ntfy}件のメッセージに未応答です。確認してください。" shogun 2>/dev/null || true
+            echo "[$(date)] [ntfy-fallback] shogun: sent ntfy notification instead of /clear (unread=${unread_ntfy})" >&2
+        fi
         return 0
     fi
 
@@ -1156,7 +1168,7 @@ while true; do
             FSWATCH_PID=$!
             WAITED=0
             while [ "$WAITED" -lt "$INOTIFY_TIMEOUT" ] && kill -0 "$FSWATCH_PID" 2>/dev/null; do
-                sleep 2
+                sleep 1
                 WAITED=$((WAITED + 1))
             done
             if kill -0 "$FSWATCH_PID" 2>/dev/null; then
