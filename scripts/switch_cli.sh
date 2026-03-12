@@ -62,35 +62,11 @@ usage() {
 resolve_pane() {
     local agent_id="$1"
 
-    # Phase 1: @agent_id メタデータから動的検索
-    local pane_count
-    pane_count=$(tmux list-panes -t "multiagent:agents" 2>/dev/null | wc -l)
-    if [[ "$pane_count" -gt 0 ]]; then
-        for i in $(seq 0 $((pane_count - 1))); do
-            local aid
-            aid=$(tmux display-message -t "multiagent:agents.$i" -p '#{@agent_id}' 2>/dev/null)
-            if [[ "$aid" == "$agent_id" ]]; then
-                echo "multiagent:agents.$i"
-                return 0
-            fi
-        done
-        log "WARN: @agent_id=$agent_id not found in any pane. Falling back to fixed mapping."
-    fi
-
-    # Phase 2: フォールバック（従来の固定マッピング）
-    local pane_base
-    pane_base=$(tmux show-options -t multiagent -v @pane_base 2>/dev/null || echo "0")
-
+    # Each agent has its own named window with a single pane
     case "$agent_id" in
-        karo)       echo "multiagent:agents.$((pane_base + 0))" ;;
-        ashigaru1)  echo "multiagent:agents.$((pane_base + 1))" ;;
-        ashigaru2)  echo "multiagent:agents.$((pane_base + 2))" ;;
-        ashigaru3)  echo "multiagent:agents.$((pane_base + 3))" ;;
-        ashigaru4)  echo "multiagent:agents.$((pane_base + 4))" ;;
-        ashigaru5)  echo "multiagent:agents.$((pane_base + 5))" ;;
-        ashigaru6)  echo "multiagent:agents.$((pane_base + 6))" ;;
-        ashigaru7)  echo "multiagent:agents.$((pane_base + 7))" ;;
-        gunshi)     echo "multiagent:agents.$((pane_base + 8))" ;;
+        karo|ashigaru[1-7]|gunshi)
+            echo "multiagent:${agent_id}.0"
+            ;;
         *)
             log "ERROR: Unknown agent_id: $agent_id"
             return 1

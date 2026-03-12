@@ -99,6 +99,7 @@
 !scripts/ratelimit_check.sh
 !scripts/switch_cli.sh
 !scripts/agent_kill.sh
+!scripts/agent_watchdog.sh
 
 
 # SayTask (sample template only, not actual data)

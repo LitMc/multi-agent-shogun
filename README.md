@@ -369,7 +369,7 @@ SSH via Termux also works. More limited than the dedicated app, but requires no 
 4. Open a new Termux window (+ button) for workers:
    ```sh
    ssh youruser@your-tailscale-ip
-   csm    # See all 9 panes
+   csm    # See all 9 agent windows (Ctrl-b n/p to switch)
    ```
 
 **Disconnect:** Just swipe the Termux window closed. tmux sessions survive — agents keep working.
@@ -953,7 +953,7 @@ Each tmux pane shows the agent's current task directly on its border:
 - **Idle**: `ashigaru2 Sonnet` — model name only, no task
 - **Display names**: Sonnet, Opus, Haiku, Codex, Spark — `+T` suffix = Extended Thinking enabled
 - Updated automatically by the Karo when assigning or completing tasks
-- Glance at all 9 panes to instantly know who's doing what
+- Switch between 9 windows (Ctrl-b n/p) to instantly know who's doing what
 
 ### 🔊 10. Shout Mode (Battle Cries)
 
@@ -1434,7 +1434,7 @@ Priority: Token > Basic > None. If neither is set, no auth headers are sent (bac
 │      │                                                              │
 │      ├──▶ Create tmux sessions                                      │
 │      │         • "shogun" session (1 pane)                          │
-│      │         • "multiagent" session (9 panes, 3x3 grid)          │
+│      │         • "multiagent" session (9 windows, one per agent)    │
 │      │                                                              │
 │      ├──▶ Reset queue files and dashboard                           │
 │      │                                                              │
@@ -1497,7 +1497,7 @@ tmux attach-session -t shogun     # Connect and give commands
 
 # Manually launch Claude Code on specific agents
 tmux send-keys -t shogun:0 'claude --dangerously-skip-permissions' Enter
-tmux send-keys -t multiagent:0.0 'claude --dangerously-skip-permissions' Enter
+tmux send-keys -t multiagent:karo.0 'claude --dangerously-skip-permissions' Enter
 ```
 
 **Restart after crash:**
@@ -1520,7 +1520,7 @@ Running `first_setup.sh` automatically adds these aliases to `~/.bashrc`:
 ```bash
 alias csst='cd /mnt/c/tools/multi-agent-shogun && ./shutsujin_departure.sh'
 alias css='tmux attach-session -t shogun'      # Connect to Shogun
-alias csm='tmux attach-session -t multiagent'  # Connect to Karo + Ashigaru
+alias csm='tmux attach-session -t multiagent'  # Connect to 9 agent windows (Ctrl-b n/p to switch)
 ```
 
 To apply aliases: run `source ~/.bashrc` or restart your terminal (PowerShell: `wsl --shutdown` then reopen).

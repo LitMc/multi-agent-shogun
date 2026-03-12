@@ -163,16 +163,16 @@ files:
   dashboard: dashboard.md
 
 panes:
-  self: multiagent:0.0
+  self: multiagent:karo.0
   ashigaru_default:
-    - { id: 1, pane: "multiagent:0.1" }
-    - { id: 2, pane: "multiagent:0.2" }
-    - { id: 3, pane: "multiagent:0.3" }
-    - { id: 4, pane: "multiagent:0.4" }
-    - { id: 5, pane: "multiagent:0.5" }
-    - { id: 6, pane: "multiagent:0.6" }
-    - { id: 7, pane: "multiagent:0.7" }
-  gunshi: { pane: "multiagent:0.8" }
+    - { id: 1, pane: "multiagent:ashigaru1.0" }
+    - { id: 2, pane: "multiagent:ashigaru2.0" }
+    - { id: 3, pane: "multiagent:ashigaru3.0" }
+    - { id: 4, pane: "multiagent:ashigaru4.0" }
+    - { id: 5, pane: "multiagent:ashigaru5.0" }
+    - { id: 6, pane: "multiagent:ashigaru6.0" }
+    - { id: 7, pane: "multiagent:ashigaru7.0" }
+  gunshi: { pane: "multiagent:gunshi.0" }
   agent_id_lookup: "tmux list-panes -t multiagent -F '#{pane_index}' -f '#{==:#{@agent_id},ashigaru{N}}'"
 
 inbox:
@@ -667,7 +667,7 @@ STEP 2: Write next task YAML first (YAML-first principle)
 STEP 3: Reset pane title (after ashigaru is idle — ❯ visible)
   # pane titleはconfig/settings.yamlの該当agentのmodel値を使う
   model=$(grep -A2 "ashigaru{N}:" config/settings.yaml | grep 'model:' | awk '{print $2}')
-  tmux select-pane -t multiagent:0.{N} -T "$model"
+  tmux select-pane -t multiagent:ashigaru{N}.0 -T "$model"
   Title = MODEL NAME ONLY. No agent name, no task description.
   If model_override active → use that model name
 
@@ -778,7 +778,7 @@ tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 tmux list-panes -t multiagent:agents -F '#{pane_index}' -f '#{==:#{@agent_id},ashigaru3}'
 ```
 
-**When to use**: After 2 consecutive delivery failures. Normally use `multiagent:0.{N}`.
+**When to use**: After 2 consecutive delivery failures. Normally use `multiagent:ashigaru{N}.0`.
 
 ## Task Routing: Ashigaru vs. Gunshi
 
@@ -805,7 +805,7 @@ STEP 2: Write task YAML to queue/tasks/gunshi.yaml
   - type: strategy | analysis | design | evaluation | decomposition
   - Include all context_files the Gunshi will need
 STEP 3: Set pane task label
-  tmux set-option -p -t multiagent:0.8 @current_task "戦略立案"
+  tmux set-option -p -t multiagent:gunshi.0 @current_task "戦略立案"
 STEP 4: Send inbox
   bash scripts/inbox_write.sh gunshi "タスクYAMLを読んで分析開始せよ。" task_assigned karo
 STEP 5: Continue dispatching other ashigaru tasks in parallel
@@ -818,7 +818,7 @@ When Gunshi completes:
 1. Read `queue/reports/gunshi_report.yaml`
 2. Use Gunshi's analysis to create/refine ashigaru task YAMLs
 3. Update dashboard.md with Gunshi's findings (if significant)
-4. Reset pane label: `tmux set-option -p -t multiagent:0.8 @current_task ""`
+4. Reset pane label: `tmux set-option -p -t multiagent:gunshi.0 @current_task ""`
 
 ### Gunshi Limitations
 
@@ -865,9 +865,9 @@ Ashigaru handle implementation only: article creation, code changes, file operat
 | Agent | Default Model | Pane | Role |
 |-------|---------------|------|------|
 | Shogun | Opus | shogun:0.0 | Project oversight |
-| Karo | Sonnet | multiagent:0.0 | Fast task management |
-| Ashigaru 1-7 | (settings.yaml参照) | multiagent:0.1-0.7 | Implementation |
-| Gunshi | Opus | multiagent:0.8 | Strategic thinking |
+| Karo | Sonnet | multiagent:karo.0 | Fast task management |
+| Ashigaru 1-7 | (settings.yaml参照) | multiagent:ashigaru{1-7}.0 | Implementation |
+| Gunshi | Opus | multiagent:gunshi.0 | Strategic thinking |
 
 **Default: Assign implementation to ashigaru.** Route strategy/analysis to Gunshi (Opus).
 足軽のモデルは settings.yaml で個別定義。bloom_routing: "auto" 時は Step 6.5 で動的切替を実行せよ。

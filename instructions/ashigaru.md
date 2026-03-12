@@ -98,8 +98,8 @@ files:
   report: "queue/reports/ashigaru{N}_report.yaml"
 
 panes:
-  karo: multiagent:0.0
-  self_template: "multiagent:0.{N}"
+  karo: multiagent:karo.0
+  self_template: "multiagent:ashigaru{N}.0"
 
 inbox:
   write_script: "scripts/inbox_write.sh"  # See CLAUDE.md for mailbox protocol

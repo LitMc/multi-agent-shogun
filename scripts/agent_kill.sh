@@ -10,19 +10,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SESSION="multiagent"
 
-# Agent-to-pane mapping (compatible with bash 3.x on macOS)
+# Agent-to-pane mapping (each agent = own window, pane 0)
 get_pane() {
     case "$1" in
-        karo)      echo "0.0" ;;
-        ashigaru1) echo "0.1" ;;
-        ashigaru2) echo "0.2" ;;
-        ashigaru3) echo "0.3" ;;
-        ashigaru4) echo "0.4" ;;
-        ashigaru5) echo "0.5" ;;
-        ashigaru6) echo "0.6" ;;
-        ashigaru7) echo "0.7" ;;
-        gunshi)    echo "0.8" ;;
-        *)         echo "" ;;
+        karo|ashigaru[1-7]|gunshi) echo "$1.0" ;;
+        *) echo "" ;;
     esac
 }
 
@@ -118,8 +110,49 @@ done
 if $RESTART; then
     echo "Restarting Claude Code for $AGENT_ID..."
     sleep 1
-    tmux send-keys -t "$TARGET" "claude --model opus --dangerously-skip-permissions" Enter
-    echo "Restart command sent. Agent should recover via /clear protocol."
+
+    # Widen pane temporarily to prevent line-wrap corruption of send-keys commands
+    ORIG_WIDTH=$(tmux display-message -t "$TARGET" -p '#{pane_width}' 2>/dev/null) || ORIG_WIDTH=""
+    if [[ -n "$ORIG_WIDTH" ]] && (( ORIG_WIDTH < 200 )); then
+        tmux resize-pane -t "$TARGET" -x 200 2>/dev/null || true
+    fi
+
+    # Clear any leftover input, then send command with literal flag to avoid line-wrap issues
+    tmux send-keys -t "$TARGET" C-c 2>/dev/null || true
+    sleep 0.3
+    tmux send-keys -t "$TARGET" -l "claude --model opus --dangerously-skip-permissions"
+    sleep 0.3
+    tmux send-keys -t "$TARGET" Enter
+
+    # Verify claude process started (up to 15 seconds)
+    echo "Waiting for claude process to start..."
+    for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+        sleep 1
+        NEW_PID=$(pgrep -P "$SHELL_PID" -f "claude" 2>/dev/null | head -1) || true
+        if [[ -n "$NEW_PID" ]]; then
+            echo "Claude Code started: PID $NEW_PID (after ${attempt}s)."
+            break
+        fi
+        if [[ $attempt -eq 15 ]]; then
+            echo "WARNING: Claude Code did not start after 15s. Retrying..."
+            tmux send-keys -t "$TARGET" -l "claude --model opus --dangerously-skip-permissions"
+            sleep 0.3
+            tmux send-keys -t "$TARGET" Enter
+            sleep 5
+            RETRY_PID=$(pgrep -P "$SHELL_PID" -f "claude" 2>/dev/null | head -1) || true
+            if [[ -n "$RETRY_PID" ]]; then
+                echo "Claude Code started on retry: PID $RETRY_PID."
+            else
+                echo "ERROR: Claude Code failed to start after retry. Manual intervention needed."
+                exit 1
+            fi
+        fi
+    done
+
+    # Restore original pane width if it was widened
+    if [[ -n "$ORIG_WIDTH" ]] && (( ORIG_WIDTH < 200 )); then
+        tmux resize-pane -t "$TARGET" -x "$ORIG_WIDTH" 2>/dev/null || true
+    fi
 fi
 
 echo "Done."
