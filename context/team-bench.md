@@ -118,6 +118,46 @@ AIエージェントチームの評価ベンチマークと自動改善フレー
   - コストが膨らむ
   - Max相当のプランに複数入る必要がある
 
+## 殿のレビューフィードバック（2026-03-13）
+
+### 評価スコアの数値化に不安
+- 絶対評価になってしまう
+- 重みの調整が非自明
+- **代替案**: 2つの体制の優劣を評価軸ごとにつける方式ではどうか
+- **実現可能性（現実的に運用できるか）を踏まえて再検討せよ**
+
+### Docker + 2リポ分離: 賛成
+- Dockerコンテナ利用に賛成
+- 2リポジトリ分離（ベンチマーク / 自動改善フレームワーク）に賛成
+
+### Benchmark Suiteについて
+- **WebArena**: UIを伴うアプリケーション開発に活きそうでよさそう
+  - ほとんどのアプリケーションがブラウザツール（Webアプリ）に落とし込めるような気もする
+  - **利用できるか深掘りしてほしい**
+- **自己生成タスク**: 量と品質に疑問。やるべきか？
+- **方針**: はじめからいろいろなベンチマークを混ぜるより、使うものを絞って使い倒す方向のほうが間違いが少なそう
+
+### Eloレーティング: 賛成
+- 体制間のEloレーティングという発想はおもしろい。賛成
+
+### Evolution Engine: 変異の方向性
+- 現状の変異がまだおとなしすぎるのではないか
+- **ARG-Designer式の自己回帰グラフ生成とはなにか?** → 説明を求む
+- **変異には少なくとも2つの方向がある**:
+  1. **無秩序な変化（セレンディピティ狙い）**
+     - 理由なく「10階層にします」「みんなで歌を歌いながら作業します」等。めちゃくちゃでいい
+     - 極端な話、自然言語として破綻していてもいい
+     - shogunの「みんなが侍のように喋る」部分 — 意味があるのかいまだによくわからないが、おもしろい
+     - 期待: 「誤ってエージェントを100倍にしたらうまくいってしまった」的なセレンディピティ
+  2. **推論に基づく変化（確実な洞察）**
+     - 失敗を分析し「次はこうしよう」
+     - 既存事例・過去体制を調査して取り入れ/アレンジ/反面教師
+- **両方がほしい**
+- ただし「コンテキストなしでLLMに投げて『いい感じに改善してくれ』」ではうまくいかない（経験則）
+- **やるなら「理由なき破壊的変更」か「十分な材料に基づく確実な洞察による変更」の2択を明確に分けるべき**
+
+### Sandbox Runner: 大賛成
+
 ## Status
 Phase 0: プロジェクト初期設計・調査
 
@@ -1155,3 +1195,695 @@ north_star_alignment:
     - "順序制約のslot3（破壊的変更）が質の低いチームしか生まない可能性 → ノベルティボーナスで緩和"
     - "Chaos Engineering障害注入がDocker環境で正しく動作するかの検証が必要"
 ```
+
+---
+
+# 軍師設計レポート第3版（gunshi_task_255a）
+
+作成日: 2026-03-13
+タスク: 殿のレビューフィードバック対応 — 評価方法再設計・WebArena深掘り・変異2方向設計・Phase 1 MVP
+
+---
+
+## A. 評価方法の再設計: 軸別ペアワイズ比較方式
+
+### A.1 殿の懸念への回答
+
+殿の懸念は正当。数値スコアの絶対評価（TeamScore = w1*X + w2*Y + ...）には2つの根本的問題がある:
+1. **重み調整が恣意的**: w1=0.4, w2=0.3 等の設定に客観的根拠がない
+2. **異次元の数値を足している**: 「テスト通過率0.9」と「復旧時間120秒」を同列に加算する不自然さ
+
+**解決策: 重みを使わない。軸ごとに「どちらが勝ったか」だけを判定する。**
+
+### A.2 軸別ペアワイズ比較フロー（重み不要版）
+
+```
+体制A vs 体制B が同一タスクセットを実行した後:
+
+【Step 1: 決定論的軸の自動判定】
+  軸① タスク完了: A=8/10完了, B=9/10完了 → B勝ち
+  軸② テスト通過: A=pass率95%, B=pass率100% → B勝ち
+  軸③ ビルド成功: A=全ビルドOK, B=1ビルド失敗 → A勝ち
+  軸④ 堅牢性: A=障害復旧2/2, B=障害復旧1/2 → A勝ち
+  軸⑤ 効率: A=壁時計90分, B=壁時計120分 → A勝ち
+
+【Step 2: LLM-judge軸のペアワイズ判定】
+  軸⑥ コード品質: judge「Aの方が可読性高い」→ A勝ち
+  軸⑦ 設計判断: judge「Bの設計の方が拡張性がある」→ B勝ち
+
+【Step 3: 勝敗集計】
+  A: 4勝 (③④⑤⑥)
+  B: 3勝 (①②⑦)
+  → A勝ち → Eloレーティング更新
+```
+
+### A.3 評価軸の定義（7軸）
+
+| # | 軸名 | 判定方法 | 勝敗基準 |
+|---|---|---|---|
+| ① | タスク完了率 | 決定論的 | 完了タスク数が多い方が勝ち |
+| ② | テスト通過率 | 決定論的 | pass率が高い方が勝ち |
+| ③ | ビルド成功率 | 決定論的 | 全ビルド成功数が多い方が勝ち |
+| ④ | 堅牢性 | 決定論的 | 障害注入後の復旧成功率が高い方が勝ち |
+| ⑤ | 効率 | 決定論的 | 壁時計時間が短い方が勝ち |
+| ⑥ | コード品質 | LLM-judge | 成果物を並べてjudgeが比較 |
+| ⑦ | 設計判断 | LLM-judge | 設計文書・タスク分解をjudgeが比較 |
+
+**特徴:**
+- 7軸中5軸が決定論的 → LLM-judge依存は2軸のみ（課題7対策にもなる）
+- 重みは不要。単純に「勝った軸の数」で総合勝敗を決定
+- 引き分け（同数勝利）の場合: 決定論的軸の勝利を優先（客観性重視）
+- 軸の追加・削除が容易（重み再調整が不要だから）
+
+### A.4 Eloレーティングへの統合
+
+```
+1世代4体制 → 6ペア（4C2）
+各ペアで同一タスクセット実行 → 7軸判定 → 勝敗決定
+勝敗結果でElo更新:
+  勝ち: Elo += K * (1 - expected)
+  負け: Elo -= K * expected
+  K = 32
+
+1世代あたり6対戦 → 10世代で60対戦
+→ Elo差50以上で統計的有意（95%信頼区間）
+```
+
+**殿向けの出力イメージ:**
+```
+=== 世代3 結果 ===
+体制       | Elo  | vs slot1 | vs slot2 | vs slot3 | vs slot4
+slot1(改善)| 1542 | -        | 5-2勝    | 4-3勝    | 6-1勝
+slot2(別路)| 1498 | 2-5負    | -        | 3-4負    | 5-2勝
+slot3(破壊)| 1510 | 3-4負    | 4-3勝    | -        | 4-3勝
+slot4(野生)| 1450 | 1-6負    | 2-5負    | 3-4負    | -
+
+→ 次世代の親: slot1 (Elo 1542)
+→ 軸別傾向: slot3はコード品質で全勝だが完了率で全敗 → 有望な特性あり
+```
+
+### A.5 実現可能性の検証
+
+| 要素 | 実現可能か | 根拠 |
+|---|---|---|
+| 決定論的5軸の自動判定 | ◎ | bats/pytest + 壁時計記録で完全自動化 |
+| LLM-judge 2軸のペアワイズ | ○ | 1ペアあたり2回judge呼び出し（AB順+BA順）× 6ペア = 24回/世代 |
+| Elo計算 | ◎ | 10行のPythonスクリプト |
+| 結果の人間可読出力 | ◎ | markdown表で自動生成 |
+| 一晩の所要時間 | ○ | 4体制×10タスク×15分/タスク = 10時間 + judge 1時間 = 11時間 ≈ 一晩 |
+
+**前版（250b）の「α=0.6の加重和」方式を本方式で置き換える。**
+
+---
+
+## B. WebArena深掘り調査 + 活用プラン
+
+### B.1 WebArenaとは何か
+
+WebArenaは、現実的なWebアプリケーション環境をDockerで完全再現し、その上でエージェントにタスクを実行させるベンチマーク。
+
+**環境構成（4つの自立型Webアプリ）:**
+
+| サイト | ベース | 内容 | タスク例 |
+|---|---|---|---|
+| **OneStopShop** | Magento EC | ECサイト（商品検索・注文・返品） | 「先月の注文で最も高い商品を返品せよ」 |
+| **Reddit (Postmill)** | Reddit風フォーラム | 投稿・コメント・モデレーション | 「r/pythonの新着投稿に全てupvoteせよ」 |
+| **GitLab** | GitLab CE | コードリポジトリ管理 | 「Issue #42を修正するMRを作成せよ」 |
+| **CMS** | Magento Admin | EC管理画面（商品・顧客管理） | 「在庫切れ商品を全て非公開にせよ」 |
+
+補助ツール: Map（地図検索）、Calculator、Scratchpad（メモ帳）
+
+**タスク規模:**
+- 812タスク（241テンプレートから生成、平均3.3バリエーション/テンプレート）
+- 難易度: 簡単（1アクション）〜 難しい（10+ アクション、クロスサイト推論）
+- 各タスクに自動評価関数付き（URL一致、テキスト一致、DB状態チェック等）
+
+**WebArena-Verified（2025改良版）:**
+- 812タスク全てを監査・修正
+- 評価関数の精度向上（型・正規化考慮の比較器に刷新）
+- NeurIPS 2025 SEAワークショップで発表
+
+### B.2 技術要件
+
+| 要件 | 詳細 |
+|---|---|
+| **Docker** | 必須。各サイトが独立コンテナ |
+| **RAM** | 推奨16GB（4サイト同時起動時） |
+| **ストレージ** | 推奨1TB（Dockerイメージ + データ） |
+| **CPU** | 4 vCPU以上 |
+| **セットアップ** | `docker run ghcr.io/servicenow/webarena-verified:latest` で起動可能 |
+| **ネットワーク** | ローカル完結（外部API不要） |
+| **殿のMac** | Intel Mac + Docker Desktop → 動作可能（RAM 16GB以上なら） |
+
+### B.3 殿の仮説検証:「ほとんどのアプリがブラウザツールに落とし込める」
+
+**検証結果: 概ね正しい、ただし限定あり。**
+
+**ブラウザで表現できるタスク（WebArenaの強み）:**
+- CRUD操作（商品登録・ユーザー管理・投稿管理） → ほぼ全てのWebアプリの基本操作
+- ナビゲーション + 情報検索 → 複雑なUI操作のテスト
+- クロスアプリ連携（GitLab issue → Reddit投稿 → EC反映）→ 実務的なワークフロー
+
+**ブラウザでは表現しにくいタスク:**
+- ファイルシステム操作（git操作、ビルド、デプロイ）→ WebArenaのGitLabは「Web UIでのGit操作」に限定
+- ターミナル作業（デバッグ、ログ調査、インフラ操作）→ 非対応
+- 非同期長時間タスク（一晩かけるCI、バッチ処理）→ 非対応
+
+**結論**: WebArenaは「ブラウザ操作能力」の測定に優れるが、shogunのようなターミナル+ファイルシステム+非同期通信を駆使するチームの評価には**部分的にしか使えない**。
+
+### B.4 team-benchへのWebArena活用プラン
+
+**★推奨: WebArenaを「チームのWeb操作能力」測定の専用軸として使う**
+
+```
+team-benchの評価タスクプール:
+  ├── コア: shogunタスク復元問題（ターミナル + ファイル操作）
+  └── 拡張軸: WebArenaタスク（ブラウザ操作）← ここにWebArenaを配置
+```
+
+**具体的な活用方法:**
+1. WebArena-Verifiedの812問から**20-30問を選定**（EC操作 + GitLab操作 中心）
+2. チームに「Playwrightを使ってWebArenaタスクを解け」と指示
+3. WebArenaの自動評価関数で正誤判定 → 決定論的評価軸として使える
+4. 1世代あたり5問をサンプリング → 他のタスクと混合
+
+**利点:**
+- 自動評価関数付き → judge不要でスコアが出る
+- Docker完結 → サンドボックスと親和性が高い
+- 現実的なWebアプリ操作 → 実用的な能力を測定
+
+**注意点:**
+- WebArena単体では「チーム協調」は測定できない → あくまで補助軸
+- Phase 1 MVPでは含めない方がよい（セットアップ複雑化を避ける）
+
+### B.5 自己生成タスクについて: やるべきか？
+
+**拙者の判断: Phase 1ではやらない。Phase 2以降で検討。**
+
+**やらない理由:**
+1. **品質保証の手間**: 自己生成タスクの品質を検証する評価パイプラインが必要 → 鶏卵問題
+2. **量の問題**: shogunの作業履歴は現時点で~250 cmd → テンプレート化しても50-100問程度
+3. **殿の懸念が正当**: 「量と品質に疑問」— 実際、自動生成タスクの品質管理は研究レベルでも未解決
+
+**Phase 2以降でやる条件:**
+- Phase 1のMVPで評価パイプラインが安定してから
+- 自己生成タスクの品質を人間が確認するフローを確立してから
+
+---
+
+## C. 変異の2方向メカニズム設計
+
+### C.1 殿のフィードバックの核心
+
+殿が求めているのは:
+1. **無秩序変異**: 理由なき破壊。セレンディピティを期待。自然言語として破綻してもよい
+2. **推論変異**: 十分な材料に基づく確実な洞察による変更
+
+**そして明確に禁止されたのは**: 「コンテキストなしでLLMに投げて『いい感じに改善してくれ』」
+
+この中間（なんとなく改善）こそが最もダメなパターン。
+
+### C.2 4スロット設計の改訂
+
+```yaml
+generation:
+  teams_per_generation: 4
+
+  slots:
+    # ===== 推論変異スロット（2枠）=====
+    - slot: 1
+      type: reasoning  # ★明確にラベリング
+      label: "確実な洞察に基づく改善"
+      input_materials:  # ★十分な材料を明示的に供給
+        - previous_best_config: "configs/gen{N-1}_best/"
+        - failure_db: "history/failure_index.yaml"
+        - past_principles: "history/principles.md"
+        - previous_scores: "history/generation_{N-1}.yaml → scores"
+        - axis_breakdown: "前世代で最も負けた軸の分析"
+      prompt: |
+        以下の材料を読み、前世代の最良チームを改善せよ。
+
+        【必読材料】
+        1. 前世代最良チーム設定: {previous_best_config}
+        2. 過去の失敗DB: {failure_db}（同じ失敗を繰り返すな）
+        3. 蓄積された設計原則: {past_principles}
+        4. 前世代のスコア: {previous_scores}（特に負けた軸を改善せよ）
+
+        【指示】
+        - 材料を分析し、最も効果的な改善点を特定せよ
+        - 変更理由を明記すること（「なぜこの変更が改善になるか」）
+        - 変更は1-3箇所に絞れ（的を絞った改善）
+
+    - slot: 2
+      type: reasoning
+      label: "外部事例に基づく設計"
+      input_materials:
+        - research_catalog: "history/research_catalog.yaml"  # MASS, AgentNet等の構成
+        - anti_patterns: "history/failure_index.yaml"
+      prompt: |
+        以下の研究プロジェクトから1つ選び、その構成をshogun環境に適用せよ。
+
+        【研究カタログ】
+        {research_catalog}
+
+        【指示】
+        - 選んだ研究の何を取り入れるか明記
+        - shogun環境への翻訳方法を具体的に記述
+        - 反面教師としての利用も可（「この研究の逆をやる」）
+
+    # ===== 無秩序変異スロット（2枠）=====
+    - slot: 3
+      type: chaotic  # ★明確にラベリング
+      label: "制御された無秩序"
+      method: parameter_explosion
+      prompt: |
+        以下のパラメータをランダムに極端な値にせよ。理由は不要。
+
+        パラメータ空間:
+        - agent_count: randint(1, 50)
+        - hierarchy_depth: randint(0, 10)
+        - communication: random_choice(["sync", "async", "broadcast", "silence"])
+        - qc_mode: random_choice(["none", "self", "peer", "triple_check", "crowd"])
+        - language_style: random_choice(["formal", "pirate", "haiku_only",
+            "emoji_only", "assembly_language", "shakespearean", "broken_grammar"])
+        - role_names: random_choice(["standard", "animals", "greek_gods",
+            "kitchen_roles", "sports_positions", "random_strings"])
+        - instruction_length: random_choice(["10_words", "100_words",
+            "10000_words", "zero_instructions"])
+
+      generation_rules:
+        - "結果が自然言語として破綻していても許容する"
+        - "『これは明らかに動かない』と思っても実行する"
+        - "常識的な判断を一切入れない"
+
+    - slot: 4
+      type: chaotic
+      label: "既存前提の完全否定"
+      method: assumption_inversion
+      prompt: |
+        前世代の全チームから共通前提を抽出し、その全てを否定せよ。
+
+        例:
+        - 全チームがテキスト通信 → このチームはJSON-RPCのみ
+        - 全チームが階層あり → このチームは完全ピア・ツー・ピア
+        - 全チームがtmux使用 → このチームはファイル監視のみ
+        - 全チームがinstructionsを持つ → このチームはinstructionsゼロ
+
+        さらに、以下からランダムに1つ適用:
+        a) 「エージェント間で情報を隠す」（各エージェントに異なるタスク情報）
+        b) 「全員が同時に同じことをする」（分業禁止）
+        c) 「1エージェントだけが全てをやる」（他は観察のみ）
+        d) 「コミュニケーション予算: 10メッセージ/タスク」（極端な制限）
+```
+
+### C.3 「中間」を排除する実装上の仕組み
+
+**問題**: LLMに「変異させろ」と言うと、無意識に「合理的な中間」に落ち着く。これが殿の言う「コンテキストなしで投げてもダメ」。
+
+**対策: 変異タイプの強制分離**
+
+```python
+def generate_team(slot_config):
+    if slot_config.type == "reasoning":
+        # 推論変異: 材料を全て読み込んでから生成
+        assert slot_config.input_materials, "推論変異には材料が必須"
+        context = load_all_materials(slot_config.input_materials)
+        prompt = slot_config.prompt.format(**context)
+        # 生成後チェック: 変更理由が明記されているか
+        result = llm.generate(prompt)
+        assert "変更理由:" in result, "推論変異には理由の明記が必須"
+        return result
+
+    elif slot_config.type == "chaotic":
+        # 無秩序変異: パラメータ空間からランダムサンプリング
+        params = random_sample(slot_config.parameter_space)
+        # LLMには「このパラメータで体制を構築せよ」とだけ指示
+        # 「改善」「最適化」等の語を禁止
+        prompt = f"以下のパラメータ通りに体制を構築せよ。合理性は問わない。\n{params}"
+        # 生成後チェック: パラメータが実際に反映されているか
+        result = llm.generate(prompt)
+        verify_params_applied(result, params)
+        return result
+```
+
+**要点: 推論変異には「十分な材料」、無秩序変異には「ランダムパラメータ」。中間（材料なしで改善させる）を構造的に不可能にする。**
+
+### C.4 ARG-Designerの説明（殿向け）
+
+**一言で言うと**: 「タスクの説明文を読んで、何人のエージェントが必要で、それぞれ何の役割で、誰と誰が話すべきかを自動設計するAI」。
+
+**もう少し詳しく:**
+
+ARG-Designer（Autoregressive Graph Designer）は、マルチエージェントチームの構成を「グラフ」として自動生成するモデル。AAAI 2026 Oral採択。
+
+```
+入力: 「GitHubのissueを修正して、テストを書いて、PRを出すタスク」
+
+ARG-Designerの思考過程（自己回帰的 = 1つずつ順番に決定）:
+
+Step 1: まずエージェント1を決定 → 「コーダー」（コードを書く役割）
+Step 2: エージェント2を決定 → 「テスター」（テストを書く役割）
+Step 3: エージェント3を決定 → 「レビュアー」（品質チェック役割）
+Step 4: もう1人必要？ → いいえ、3人で十分 → 停止
+Step 5: 通信リンクを決定 →
+  コーダー ←→ テスター（コードとテストの整合性）
+  コーダー ←→ レビュアー（レビュー結果のフィードバック）
+  テスター → レビュアー（テスト結果の報告）
+
+出力: 3ノード・3エッジのグラフ
+```
+
+**「自己回帰」の意味**: ChatGPTが一文字ずつ生成するように、ARG-Designerも「1エージェントずつ」「1通信リンクずつ」順番に生成する。前に決めたことを参照して次を決めるので、全体として整合性のあるチーム構成になる。
+
+**team-benchでの活用法**:
+- 推論変異slot2で、タスク説明を入力 → ARG-Designerが最適チーム構成を自動提案
+- 人間やLLMが「こんなチームにしよう」と考える代わりに、学習済みモデルが構造を生成
+- ただし: ARG-Designerは短期タスク向けに訓練されているため、永続チームへの適用は要調整
+
+---
+
+## D. Phase 1 MVP構成提案
+
+### D.1 原則: 1ベンチマーク × 1変異方式 × 最小構成
+
+殿の方針「絞って使い倒す」に従い、Phase 1ではあえてスコープを狭くする。
+
+### D.2 Phase 1 MVP仕様
+
+```yaml
+phase1_mvp:
+  name: "team-bench MVP"
+  goal: "2つの体制を比較して、どちらが優れているか判定できるようにする"
+  timeline: "2週間で動くものを作る"
+
+  benchmark:
+    source: "SWE-Bench Verified サブセット"
+    task_count: 10  # まず10問に絞る
+    selection_criteria:
+      - "Python単体ファイル修正"
+      - "テスト付き"
+      - "30分以内に解ける難易度"
+      - "Docker内で自己完結"
+    why: |
+      SWE-Benchは最も成熟したベンチマーク。
+      自動評価（テスト通過）が確実に動く。
+      team-bench固有のリスク（自己生成タスクの品質問題）を回避。
+
+  evaluation:
+    method: "軸別ペアワイズ比較（A.2節のフロー）"
+    axes:
+      - task_completion  # 決定論的
+      - test_pass_rate   # 決定論的
+      - wall_clock_time  # 決定論的
+    note: |
+      Phase 1ではLLM-judge軸を含めない。
+      決定論的軸のみで体制比較の仕組みを確立する。
+      LLM-judge軸はPhase 2で追加。
+
+  mutation:
+    method: "手動 + 推論1枠"
+    teams_per_generation: 2  # まず2体制比較から始める
+    slots:
+      - slot: 1
+        type: baseline
+        description: "現行shogun体制をそのままDockerに移植"
+      - slot: 2
+        type: reasoning
+        description: |
+          slot1を基に、1つだけ変更を加えた体制。
+          例: 「軍師を削除してセルフQC」「足軽3体に削減」等。
+          変更理由を明記。
+
+  sandbox:
+    runtime: "Docker コンテナ"
+    setup: |
+      1. Dockerfile: Ubuntu 24.04 + tmux + Claude Code CLI
+      2. claude setup-token でMaxトークン注入
+      3. multi-agent-shogun体制定義をマウント
+      4. SWE-Bench タスク10問をマウント
+    isolation: "コンテナ間ファイルシステム完全隔離"
+
+  output:
+    format: |
+      === Phase 1 結果 ===
+      体制A (baseline): 完了 8/10, pass率 90%, 時間 120分
+      体制B (no-gunshi): 完了 7/10, pass率 85%, 時間 100分
+      軸別: A勝ち(完了,pass), B勝ち(時間)
+      総合: A勝ち (2-1)
+```
+
+### D.3 Phase 1でやらないこと
+
+| やらない | 理由 | いつやるか |
+|---|---|---|
+| WebArena | セットアップ複雑、RAM要件大 | Phase 2 |
+| 自己生成タスク | 品質保証が未確立 | Phase 3 |
+| LLM-judge | 決定論的軸だけでまず仕組みを回す | Phase 2 |
+| 無秩序変異 | 2体制比較で十分。4体制はPhase 2 | Phase 2 |
+| Eloレーティング | 2体制だと勝敗のみ。3+体制でElo導入 | Phase 2 |
+| Chaos Engineering | 堅牢性テストはベースラインが安定してから | Phase 3 |
+| 失敗DB | 蓄積データが2世代では不十分 | Phase 2以降自動蓄積 |
+
+### D.4 Phase 1 → Phase 2 → Phase 3 ロードマップ
+
+```
+Phase 1 (2週間): 最小MVP
+  2体制 × SWE-Bench 10問 × 決定論的3軸
+  → 「比較の仕組みが動く」ことを確認
+
+Phase 2 (2週間): 評価拡張
+  4体制 × SWE-Bench 10問 + WebArena 5問 × 決定論的5軸 + LLM-judge 2軸
+  → Eloレーティング導入、推論変異+無秩序変異の4スロット稼働
+  → 失敗DB自動蓄積開始
+
+Phase 3 (2週間): 自動ループ
+  一晩自動実行: 4体制生成→評価→次世代選択
+  → Chaos Engineering導入、自己生成タスク検討
+  → 殿は朝起きて結果を確認するだけ
+```
+
+### D.5 Phase 1の最初の一手
+
+```bash
+# 殿がまずやること（所要時間: 30分）
+mkdir -p ~/team-bench && cd ~/team-bench
+git init
+
+# 1. Dockerfileを作る（shogun環境の再現）
+# 2. SWE-Bench Verifiedから10問を選定・ダウンロード
+# 3. 現行shogunの体制定義をconfigs/baseline/にコピー
+# 4. 評価スクリプト(3軸の自動判定)を書く
+# 5. docker build → docker run → 10問実行 → 結果CSV出力
+```
+
+**これが「team-bench リポジトリの最初のcommit」になる。**
+
+---
+
+## North Star Alignment
+
+```yaml
+north_star_alignment:
+  status: aligned
+  reason: |
+    殿の4フィードバック全てに対応:
+    A) 重み不要の軸別ペアワイズ比較方式で評価の不安を解消
+    B) WebArenaの実態を調査し「部分活用」の現実的プランを提示
+    C) 変異の「無秩序/推論」2方向を構造的に分離、中間を排除
+    D) SWE-Bench 10問×2体制×決定論的3軸のPhase 1 MVPで「絞って使い倒す」
+  risks_to_north_star:
+    - "Phase 1のSWE-Bench 10問が「チーム力」を十分に測定できるか未検証"
+    - "Dockerコンテナ内でのClaude Code + tmux環境構築が想定より困難な可能性"
+    - "2体制比較だけでは統計的有意差の判定が弱い → Phase 2で4体制に拡張して対処"
+```
+
+---
+
+## 先行事例 深掘り調査結果（cmd_256, 2026-03-13）
+
+### 調査概要
+5足軽が並列で15ツール/フレームワーク/ベンチマークを深掘り調査。各ツールについて実在確認・ソースコード・ライセンス・依存関係・Docker対応・動作例・team-bench統合可否の7項目を調査済み。
+
+### カテゴリ別サマリ
+
+#### 1. 自己改善ループ系（SiriuS, EvoAgentX, ARTEMIS）
+
+**SiriuS** (NeurIPS 2025, Stanford/Zou Group)
+- 経験ライブラリ（成功/失敗軌跡の蓄積→SFT）による自己改善ループ。OpenAI Fine-tuning API必須。
+- GitHub: https://github.com/zou-group/sirius | License: MIT
+- **統合判定: 非推奨** — OpenAI SFT APIが核心であり、Claude Max環境では動作不可。推論のみでは自己改善ループが機能しない。
+- 有用な設計思想: 経験ライブラリの(input, trajectory, reward)データ構造はteam-benchの世代記録(generation_N.yaml)・失敗DB(failure_index.yaml)の設計に参考になる。
+
+**EvoAgentX** (EMNLP 2025 Demo)
+- 3つの最適化アルゴリズム統合: TextGrad（プロンプト最適化）、AFlow（MCTSベースのワークフロートポロジー最適化）、MIPRO（デモンストレーション最適化）。
+- GitHub: https://github.com/EvoAgentX/EvoAgentX (2,500+ stars) | License: MIT
+- **統合判定: 条件付き推奨** — LiteLLM経由でClaude対応の可能性あり（要検証）。AFlowのMCTS探索はteam-benchのEvolution Engineの体制構造最適化に転用可能。TextGradはinstructions/*.mdの自動改善に適用可能。
+- 障壁: Claude Max→LiteLLMプロキシ接続の検証が必要。shogunのYAML inbox通信をワークフローグラフに変換するアダプタが必要。
+
+**ARTEMIS** (arXiv 2512.09108, TurinTech AI)
+- ブラックボックス最適化: 明示的評価関数不要、実行ログからフィットネスを抽出。セマンティック遺伝的アルゴリズムでLLMベースの変異/交叉。
+- GitHub: なし（プラットフォーム非公開） | License: 不明（OSSではない）
+- **統合判定: 概念のみ推奨** — コード利用は不可だが設計思想が極めて有用。
+- 最も有用な設計思想:
+  - **ログベース評価**: 実行ログからフィットネスを推定 → 殿の「評価スコアの数値化に不安」への最も直接的な解決策
+  - **セマンティックGA**: LLMによる意味を保持した変異/交叉 → instructions/*.mdの進化に直接適用可能
+  - **階層的評価**: 安い評価（静的解析）→高い評価（LLM比較）の段階実行 → コスト効率向上
+
+#### 2. マルチエージェント評価系（MARBLE, ChatDev, MetaGPT）
+
+**MARBLE / MultiAgentBench** (ACL 2025 Main)
+- マルチエージェントの協調・競合を評価するベンチマーク。star/chain/tree/graphのトポロジー比較。milestone-based KPIで3軸評価（タスクスコア・協調スコア・計画効率）。
+- GitHub: https://github.com/MultiagentBench/MARBLE | License: MIT (推定)
+- **統合判定: 推奨（評価指標・KPI設計の参考として）** — MARBLEの3軸評価はteam-benchのTeamScore設計と補完的。milestone-based KPIの考え方は直接借用可能。ただし短期エピソード前提のため永続組織への拡張が必要。
+
+**ChatDev** (OpenBMB/清華大学, 25,000+ stars)
+- CEO/CTO/Programmer/Tester等が自動対話しソフトウェアを生成。CompanyConfig（3つのJSON設定ファイル）変更だけで体制が変わる。
+- GitHub: https://github.com/OpenBMB/ChatDev | License: Apache 2.0 (code) / CC BY NC 4.0 (data)
+- **統合判定: 推奨（比較対象フレームワークとして）** — 設定ファイル3つの変更で体制変異が可能。Evolution Engineの変異対象として理想的。shogun vs ChatDev式の直接比較がteam-benchの目玉になりうる。
+- 通信方式の差異: ChatDev=同期ターン制・2者間、shogun=非同期・多者間。成果物品質で比較。
+
+**MetaGPT** (ICLR 2024, 45,000+ stars)
+- SOP（Standard Operating Procedures）駆動。構造化中間成果物（PRD→設計→コード）で品質担保。Publish/Subscribe通信。
+- GitHub: https://github.com/FoundationAgents/MetaGPT | License: MIT | Docker Hub: metagpt/metagpt:latest
+- **統合判定: 推奨（比較対象 + SOP設計の参考として）** — SOP方式のRole定義はshogunのinstructions/*.mdと対比可能。構造化中間成果物は評価指標設計に活用可能。Docker対応済みで組込み障壁が低い。
+- 理想的な実験設計: shogun vs ChatDev vs MetaGPT の3体制同一タスク比較。
+
+**3ツール共通課題**:
+- LLM API前提（Claude Max直接利用不可）→ LiteLLMプロキシまたはClaude CLIラッパーで対応
+- ソフトウェア開発タスク特化（ChatDev/MetaGPT）→ タスクプールはコーディング系に限定
+
+#### 3. ベンチマーク系（WebArena, SWE-Bench, AgentBench）
+
+**WebArena** ★殿の最大関心事項★
+- 812タスク（4つの自己ホスト型Webアプリ: Shopping, Reddit, GitLab, CMS）でWebエージェントを評価。タスク成功率で判定（部分点なし）。
+- GitHub: https://github.com/web-arena-x/webarena | Verified版: https://github.com/ServiceNow/webarena-verified | License: Apache-2.0
+- Docker完全対応（公式イメージあり）。WebArena Verified（2026年リリース、評価関数を人手監査で改善）。
+- 最新SOTA: ~62%成功率（人間78.24%）。
+
+- **4ドメインの具体的タスク例**:
+  - Shopping: 「最後に注文が発送されたのはいつか」「最も評価の高い商品をカートに追加」
+  - GitLab: 「プロジェクトのREADMEにマイルストーンを追記」「新Issueを作成してラベル付与」
+  - Reddit: 「特定サブレディットの最人気投稿を検索」
+  - CMS: 「在庫切れ商品を無効化」
+
+- **team-bench統合方法**:
+  1. Docker Composeで4サイトを起動（sandbox環境の一部）
+  2. 812タスクから50問選定（カテゴリバランス考慮）
+  3. 1世代あたり10問サンプリング → 体制A/Bに同じ10問を実行
+  4. 成功数でペアワイズ比較 + 所要時間・トークン使用量も副次指標
+
+- **統合判定: 強く推奨（最優先で組み込むべき）** — 殿の高い関心、Docker対応、決定論的評価（LLM-judge不要）、豊富なタスク、Apache-2.0。
+- **障壁**: ストレージ1TB（殿のMacで確保可能か要確認）、4サイト全起動時のメモリ消費（16GB環境では厳しい可能性）、ブラウザ操作ライブラリの選定。
+
+**SWE-Bench / SWE-Bench Verified**
+- GitHubの実IssueをLLMに修正させるベンチマーク。SWE-Bench: 2,294問、Verified: 500問（人手キュレーション済み）。決定論的評価（テストパス/フェイル）。
+- GitHub: https://github.com/SWE-bench/SWE-bench | License: MIT | ICLR 2024採択
+- SOTA: Claude 4.5系で~72% resolve rate（2026年時点）。
+- **データ汚染リスク: 深刻** — 全タスクが公開GitHubリポから収集。LLM学習データに含まれている可能性高。OpenAIが2026年に評価を停止。ただし体制間の相対比較なら同じ汚染を受けるため公平。
+- **統合判定: 条件付き推奨（WebArenaの次に検討）** — 決定論的テスト、Docker完全対応、MIT。コード修正タスクでチーム分業（分析→分解→修正→QC）の評価に適する。
+
+**AgentBench** (ICLR 2024, Tsinghua/THUDM)
+- 8環境（OS, DB, KnowledgeGraph, CardGame, LTP, ALFWorld, WebShop, WebBrowsing）でLLMエージェントを評価。
+- GitHub: https://github.com/THUDM/AgentBench | License: Apache-2.0
+- **統合判定: 非推奨（部分流用のみ）** — 8環境中team-benchに有用なのはOS+DBの2つのみ。環境が簡素化されすぎ。WebArena/SWE-Benchの方が深い。最終更新2024年で活発な開発停止。チーム評価用に設計されていない。
+
+#### 4. チーム生成・最適化系（ARG-Designer, MAPRO, MAP-Elites）
+
+**ARG-Designer** (AAAI 2026 Oral) ★殿向け詳細説明あり★
+- タスク記述を入力すると、最適なエージェント数・役割・通信トポロジーを自動生成する。GRUベースの条件付き自己回帰グラフ生成。
+- GitHub: https://github.com/Shiy-Li/ARG-Designer | License: 未明記
+- 6ベンチマークでSOTA（平均92.78%）、トークン効率はG-Designerの約半分。
+
+- **殿向け説明**: 「タスクの内容を読んで、何人のエージェントが必要か、各エージェントにどんな役割を持たせるか、誰と誰を繋げるかを、自動で一歩ずつ決めていく仕組み」。コース料理の例え: 注文内容（タスク）を見て→一品ずつ（エージェントを一人ずつ）→前の料理を見て次を決める（前に選んだ役割を踏まえて次の役割を選ぶ）→チーム完成。
+
+- **統合判定: 条件付き推奨（Evolution Engineの体制案自動提案に最適）**
+  - shogunの各役割のinstructions.mdを役割埋め込みに変換→役割プールに登録で統合可能
+  - 障壁: 永続組織向けの再学習が必要（40-60例）、非同期通信対応の拡張が必要
+
+**MAPRO** (arXiv 2510.07475, Amazon Science)
+- マルチエージェントの各プロンプトをMAP推論で同時最適化。信念伝播でK^N通りの組み合わせを多項式時間で解く。Credit Assignment（どのエージェントが失敗原因か特定）が強み。
+- GitHub: 公開リポジトリなし（2026年3月時点） | License: N/A
+- **統合判定: 概念のみ推奨（credit assignmentの考え方を借用）** — instructions*.mdの同時最適化に理論的には最適だが、コード未公開のため自前実装が必要。Credit Assignmentの「逆トポロジーblame伝播」はteam-benchの評価パイプラインに「どのエージェントが原因か」の帰属分析として即座に借用可能。
+
+**MAP-Elites** (pyribs, MIT License)
+- 品質多様性（Quality-Diversity）アルゴリズム。特徴空間をグリッドに分割し、各セルに最良解を保持。品質と多様性を同時追求。
+- GitHub: https://github.com/icaros-usc/pyribs (v0.8.3) | License: MIT | Python 3.10+
+- **統合判定: 強く推奨（殿の設計に明示的に組み込み済み）** — 殿の「世代10+でMAP-Elites移行」構想に直結。pyribsのGridArchiveに過去の体制データを投入→未探索領域の可視化→空セル狙い撃ちの体制生成が可能。
+- 特徴空間の例: 次元1=エージェント数(1-15)、次元2=階層深度(1-5)、次元3=中央集権度(0-1)
+- 障壁: 体制定義（数千行のMarkdown）を固定長ベクトルにエンコードする方法が必要、1解の評価=約3時間のためbatch_sizeを1-2に制限
+
+#### 5. 実用フレームワーク比較（AutoGen, CrewAI, OpenHands, Aider）
+
+**AutoGen** (Microsoft, ~50.4k stars)
+- 非同期イベント駆動。RoundRobin/Selector/Magnetic-One（中央オーケストレーター型）の3チームパターン。AutoGen StudioでビジュアルUIあり。
+- GitHub: https://github.com/microsoft/autogen | License: MIT
+- Claude対応あり。Docker対応あり（DockerCommandLineCodeExecutor）。JSON設定でチーム定義。
+- **統合判定: 被験者+設計参考として採用** — JSON設定で体制を外部注入可能。ただしmaintenance mode（後継=Microsoft Agent Framework）のため長期安定性に懸念。
+
+**CrewAI** (~45.6k stars, 活発更新中)
+- YAML宣言的定義（agents.yaml/tasks.yaml）で体制を定義。role/goal/backstoryの3属性エージェント設計。sequential/hierarchical/consensualの3プロセスモード。
+- GitHub: https://github.com/crewAIInc/crewAI | License: MIT
+- Claude対応あり（Claude 3.5 Sonnet確認済み）。Docker対応あり（safe mode）。
+- **統合判定: 被験者+設計参考として最優先採用** — YAML定義で体制を外部差替え可能。hierarchicalモードがshogunの階層構造に最も近く直接比較しやすい。role/goal/backstoryパターンはEvolution Engineの変異テンプレートに直接応用可能。
+
+**OpenHands** (~68.6k stars, V1 SDK リリース済み)
+- Docker sandboxがコア設計。コンテナ隔離+SSH接続+自動破棄。単一エージェント設計（チーム機能なし）。
+- GitHub: https://github.com/OpenHands/OpenHands | License: MIT
+- Claude対応あり。$18.8M Series A funding (2025)。
+- **統合判定: Sandbox Runner実装参考+単一エージェントベースライン** — Docker sandbox設計（SSH接続、workspace mount、自動破棄）はteam-benchのSandbox Runnerの直接的手本。チーム被験者としては不適だが、「単一エージェント vs マルチエージェント体制」のベースライン比較に使える。
+
+**Aider** (~41k stars, 活発更新中)
+- ペアプログラミング型の単一エージェント。リポジトリマップ（関数シグネチャインデックス）でコードベース全体を把握。全変更をgit commit自動追跡。
+- GitHub: https://github.com/Aider-AI/aider | License: Apache 2.0
+- Claude対応あり（Claude 3.7 Sonnetをデフォルト推奨）。Docker公式サポートなし。
+- **統合判定: 単一エージェントベースライン（SWE-Bench系タスク向き）** — マルチエージェント体制の優位性を示す比較対照群として使用。リポジトリマップのコンセプトは足軽のコンテキスト最適化の参考に。
+
+**4ツール比較表**:
+
+| 項目 | AutoGen | CrewAI | OpenHands | Aider |
+|------|---------|--------|-----------|-------|
+| Stars | ~50.4k | ~45.6k | ~68.6k | ~41k |
+| License | MIT | MIT | MIT | Apache 2.0 |
+| Claude対応 | ○ | ○ | ○ | ○ |
+| Docker対応 | ○ | ○ | ◎(コア) | △ |
+| マルチエージェント | ◎ | ◎ | × | × |
+| 体制定義 | Python/JSON | YAML(宣言的) | なし | なし |
+| team-bench被験者 | ◎ | ◎ | △(ベースライン) | ○(ベースライン) |
+| Sandbox Runner参考 | △ | △ | ◎(最有力) | × |
+| Evolution Engine材料 | ○ | ◎(最有力) | × | △ |
+
+### 統合推奨（全15ツール横断）
+
+全ツールを横断して、team-benchへの統合優先順位:
+
+**Tier 1（即採用）**:
+- **MAP-Elites (pyribs)** — 殿の設計に明示的に組み込み済み。MIT License、Python 3.10+、即使用可能。世代10+でのアーカイブ管理に不可欠。
+- **CrewAI** — 被験者として最優先。YAML宣言的定義で体制差替えが最も容易。hierarchicalモードでshogunとの直接比較が可能。
+
+**Tier 2（Phase 2で検討）**:
+- **WebArena** — 殿の最大関心事項。Docker完全対応、決定論的評価、812タスク。ただしストレージ1TB・メモリ16GB環境での動作確認が必要で、環境整備に時間がかかる。
+- **SWE-Bench Verified** — 決定論的テスト、Docker対応、MIT。コード修正タスクのチーム評価に最適。データ汚染は相対比較なら許容可能。Phase 1のMVPベンチマークとして引き続き有力。
+- **MetaGPT** — 比較対象フレームワーク。Docker対応済み。shogun vs ChatDev vs MetaGPTの3体制比較の一角。
+- **ChatDev** — 比較対象フレームワーク。CompanyConfig変異で体制実験が自動化しやすい。
+- **OpenHands** — Sandbox Runner実装の設計参考として。Docker sandbox設計を直接借用。
+
+**Tier 3（設計思想のみ借用）**:
+- **ARTEMIS** — ログベース評価（評価関数不要）とセマンティックGA（LLMベース変異/交叉）の設計思想を自前実装で取り込む。階層的評価（安い→高い）もコスト削減に有効。
+- **ARG-Designer** — Evolution Engineの体制案自動提案に活用。永続組織向けの再学習データが蓄積されてから本格導入。
+- **MAPRO** — Credit Assignment（どのエージェントが失敗原因か）の考え方を評価パイプラインに組み込む。コード公開待ちまたは簡略版を自前実装。
+- **EvoAgentX** — TextGrad/AFlowの最適化アルゴリズムを参考に。Claude Max対応可否の検証が先決。
+- **MARBLE** — 評価指標（milestone-based KPI、3軸評価）の設計参考として。
+- **SiriuS** — 経験ライブラリの(input, trajectory, reward)データ構造を世代記録YAMLフォーマットに反映。
+- **AutoGen** — Magnetic-One等のチームパターンを変異バリエーション元として参考。maintenance mode入りのため直接統合は非推奨。
+- **Aider** — 単一エージェントベースライン。リポジトリマップのコンセプトのみ参考。
+
+**Tier 4（不採用）**:
+- **AgentBench** — 8環境中有用なのはOS+DBのみ。簡素化されすぎ、開発停止、チーム評価非対応。WebArena/SWE-Benchで代替可能。
+
+### 殿への確認事項
+
+1. **WebArenaのストレージ1TB**: 殿のMacでディスク空き容量1TB確保可能か？ 4サイト全起動時のメモリ消費（16GB環境では厳しい可能性）も要検証。
+2. **LLM API課金の許容範囲**: ChatDev/MetaGPT/AutoGen/CrewAIはいずれもLLM API前提。Claude Maxの定額内で動かすにはLiteLLMプロキシまたはClaude CLIラッパーが必要だが、この検証工数を許容するか？ それとも成果物品質のみで比較する（LLM種類を統制しない）アプローチを取るか？
+3. **被験者フレームワークの優先度**: CrewAI（最も統合しやすい）を最初の被験者とすることでよいか？ それともshogun vs shogun変異体の自己比較から始めるべきか？
+4. **ARG-Designerの再学習データ**: Evolution Engineで体制案を自動生成するためにARG-Designerを使う場合、初期の学習データ（40-60例のチーム構成成功/失敗データ）をどう収集するか？ team-benchの実行履歴が蓄積されるまで待つか、合成データで始めるか？
+5. **MAP-Elitesの特徴空間定義**: 体制の特徴をどの軸で測るか？ 提案: エージェント数×階層深度×中央集権度×役割専門化度の4次元。殿の直感と合うか？
