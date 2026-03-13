@@ -1887,3 +1887,428 @@ north_star_alignment:
 3. **被験者フレームワークの優先度**: CrewAI（最も統合しやすい）を最初の被験者とすることでよいか？ それともshogun vs shogun変異体の自己比較から始めるべきか？
 4. **ARG-Designerの再学習データ**: Evolution Engineで体制案を自動生成するためにARG-Designerを使う場合、初期の学習データ（40-60例のチーム構成成功/失敗データ）をどう収集するか？ team-benchの実行履歴が蓄積されるまで待つか、合成データで始めるか？
 5. **MAP-Elitesの特徴空間定義**: 体制の特徴をどの軸で測るか？ 提案: エージェント数×階層深度×中央集権度×役割専門化度の4次元。殿の直感と合うか？
+
+---
+
+# 殿の第2回フィードバック対応（gunshi_task_257a）
+
+作成日: 2026-03-13
+タスク: 殿の第2回レビューフィードバック7項目への設計反映
+
+---
+
+## 【1】体制パッケージ仕様 ★重要★
+
+### 1.1 パッケージの定義
+
+「体制パッケージ」= Dockerコンテナに配布して即座にチームを起動できる自己完結的なディレクトリ。歴代の各体制を完全再現するための最小単位。
+
+### 1.2 パッケージ構造
+
+```
+team-package/
+├── manifest.yaml              # パッケージメタ情報（必須）
+├── instructions/              # エージェント定義（体制の核心）
+│   ├── shogun.md              #   or coordinator.md, lead.md etc.
+│   ├── karo.md                #   or manager.md, dispatcher.md etc.
+│   ├── ashigaru.md            #   or worker.md, coder.md etc.
+│   └── gunshi.md              #   or reviewer.md, analyst.md etc. (任意)
+├── config/
+│   ├── settings.yaml          # 体制設定（言語、タイムアウト等）
+│   ├── projects.yaml          # プロジェクト定義
+│   └── roles.yaml             # 役割マッピング（pane配置、agent_id等）
+├── scripts/
+│   ├── inbox_write.sh         # 通信スクリプト
+│   ├── inbox_watcher.sh       # 通知デーモン
+│   ├── startup.sh             # 体制起動スクリプト（tmuxセッション構築）
+│   └── *.sh                   # その他の体制固有スクリプト
+├── CLAUDE.md                  # エージェント共通ルール（自動読み込み）
+├── queue/                     # 空のキュー構造（テンプレート）
+│   ├── inbox/
+│   ├── tasks/
+│   └── reports/
+└── tests/                     # 体制の自己テスト（任意）
+    └── smoke_test.bats        # 最低限の動作確認
+```
+
+### 1.3 manifest.yaml の仕様
+
+```yaml
+# manifest.yaml — 体制パッケージの身分証明書
+package:
+  name: "shogun-v1"
+  version: "1.0.0"                    # semver
+  description: "Original multi-agent-shogun hierarchy"
+  created: "2026-03-14T00:00:00"
+  parent: null                         # 派生元パッケージ（なければnull）
+  generation: 0                        # 進化世代（ベースライン=0）
+
+  # 体制構造の宣言
+  structure:
+    agents:
+      - id: shogun
+        role: commander
+        model: opus                    # 使用モデル
+        pane: "0.0"                    # tmux pane配置
+      - id: karo
+        role: manager
+        model: opus
+        pane: "1.0"
+      - id: ashigaru1
+        role: worker
+        model: sonnet
+        pane: "1.1"
+      # ... (全エージェント列挙)
+      - id: gunshi
+        role: analyst
+        model: opus
+        pane: "1.8"
+
+    hierarchy_depth: 3                 # 階層の深さ
+    communication: async_inbox         # 通信方式
+    qc_chain: true                     # QC機構の有無
+    agent_count: 10                    # 総エージェント数
+
+  # 変異メタデータ（ベースラインの場合は省略可）
+  mutation:
+    type: null                         # reasoning | chaotic | null
+    parent_package: null               # 変異元
+    changes_summary: null              # 変更点の要約
+    change_reason: null                # 変更理由（推論変異の場合必須）
+
+  # 実行要件
+  requirements:
+    claude_sessions: 5                 # 必要なClaude同時セッション数
+    estimated_ram_gb: 8                # 推定メモリ使用量
+    min_tmux_panes: 10                 # 最小pane数
+```
+
+### 1.4 Dockerイメージとの関係
+
+```
+team-benchのDockerイメージ構成:
+
+ベースイメージ (team-bench-base:latest)
+├── Ubuntu 24.04
+├── tmux, git, curl, jq, yq
+├── Claude Code CLI
+├── bats (テストフレームワーク)
+└── 評価パイプライン (/evaluator/)
+
+↓ docker build時に体制パッケージを注入
+
+体制イメージ (team-bench-runner:{package_name}:{version})
+├── ベースイメージの全内容
+└── /workspace/team-package/  ← 体制パッケージをCOPY
+```
+
+**Dockerfile テンプレート:**
+```dockerfile
+FROM team-bench-base:latest
+ARG PACKAGE_DIR=./packages/shogun-v1
+COPY ${PACKAGE_DIR} /workspace/team-package/
+WORKDIR /workspace
+# startup.sh が tmuxセッションを構築し全エージェントを起動
+CMD ["bash", "/workspace/team-package/scripts/startup.sh"]
+```
+
+**配布フロー:**
+```
+1. 体制パッケージを packages/{name}/ に配置
+2. docker build --build-arg PACKAGE_DIR=./packages/{name} -t team-bench-runner:{name}:{version} .
+3. docker run --env CLAUDE_TOKEN=$TOKEN team-bench-runner:{name}:{version}
+4. コンテナ内で startup.sh → tmux + 全エージェント起動 → タスク実行
+```
+
+### 1.5 バージョニングルール
+
+| ルール | 詳細 |
+|---|---|
+| **バージョン形式** | semver: MAJOR.MINOR.PATCH |
+| **MAJOR** | 体制構造の根本変更（エージェント数変更、階層変更） |
+| **MINOR** | instructions内容の変更、設定パラメータ変更 |
+| **PATCH** | typo修正、コメント追加等の非機能変更 |
+| **不変性** | 一度タグ付けされたバージョンは変更禁止。修正はPATCH++で新バージョン |
+| **保存先** | `packages/{name}/` にディレクトリとして保存 + git tag |
+| **歴代記録** | `history/generation_{N}.yaml` に manifest.yaml の内容をスナップショット |
+
+### 1.6 実用性: 体制をインストールして使う
+
+体制パッケージは「ベンチマーク評価」だけでなく「実際のプロジェクトで使う」こともできる:
+
+```bash
+# 新プロジェクトに体制を適用
+git clone https://github.com/LitMc/team-bench
+cd team-bench
+# 世代5のチャンピオン体制をインストール
+cp -r packages/gen005_champion/* ~/my-project/.agents/
+cd ~/my-project
+bash .agents/scripts/startup.sh
+# → 新しい体制でプロジェクト開発が始まる
+```
+
+---
+
+## 【2】WebArena: Windows機での構成
+
+### 2.1 推奨構成: WSL2 + Docker Desktop
+
+```
+Windows機
+├── WSL2 (Ubuntu 24.04)
+│   ├── Docker Engine (WSL2バックエンド)
+│   │   ├── WebArena Shopping コンテナ
+│   │   ├── WebArena Reddit コンテナ
+│   │   ├── WebArena GitLab コンテナ
+│   │   └── WebArena CMS コンテナ
+│   └── team-bench 評価パイプライン
+│
+└── Docker Desktop for Windows
+    └── WSL2バックエンドモードで動作
+```
+
+### 2.2 セットアップ手順
+
+```bash
+# Windows側: Docker Desktop for Windows をインストール
+# Settings → General → "Use WSL 2 based engine" を有効化
+# Settings → Resources → WSL Integration → Ubuntu-24.04 を有効化
+
+# WSL2内:
+sudo apt update && sudo apt install -y docker.io docker-compose
+
+# WebArena-Verified の起動
+docker run ghcr.io/servicenow/webarena-verified:latest --help
+# 4サイトを個別コンテナで起動
+docker compose -f webarena-docker-compose.yml up -d
+```
+
+### 2.3 リモート接続の選択肢
+
+| 方式 | 概要 | メリット | デメリット |
+|---|---|---|---|
+| **ローカル直接** | Windows機でWebArena + team-bench両方実行 | シンプル、低遅延 | Windows機のRAM/CPUを全て使う |
+| **★分離実行** | Windows機=WebArenaサーバ、Mac=team-bench実行 | 負荷分散 | ネットワーク経由でのアクセス設定が必要 |
+| **リモートDocker** | MacからWindows機のDocker APIに接続 | Macから透過的に操作 | Docker TLS設定が複雑 |
+
+**★推奨: 分離実行方式**
+
+```
+Mac (殿の主マシン)                    Windows機
+┌──────────────────┐               ┌──────────────────┐
+│ team-bench        │               │ WebArena          │
+│ - 評価パイプライン │──HTTP──────▶│ - Shopping :7770  │
+│ - 体制実行        │               │ - Reddit :9999    │
+│ - judge           │               │ - GitLab :8023    │
+│ - 結果集計        │               │ - CMS :7780       │
+└──────────────────┘               └──────────────────┘
+```
+
+- WebArenaの4サイトはHTTPで提供 → MacのエージェントがPlaywright経由でアクセス
+- Windows側はWebArenaを常時起動しておくだけ
+- Macの負荷はチーム実行+評価のみ（WebArenaのディスクI/OはWindows側に隔離）
+
+### 2.4 ストレージ見積もり
+
+| コンポーネント | サイズ |
+|---|---|
+| WebArena Dockerイメージ（4サイト分） | ~50-100GB |
+| WebArenaデータ（商品DB、ユーザーデータ等） | ~200-500GB |
+| Docker overlay | ~100GB |
+| **合計** | **~350-700GB** |
+
+Windows機なら十分確保可能。Macのストレージは消費しない。
+
+---
+
+## 【3】ペアワイズ専用judge: 正式採用
+
+第3版レポート（gunshi_task_255a）セクションAの設計を正式採用とする。変更なし。
+
+**確定仕様サマリ:**
+- 7軸（決定論的5軸 + LLM-judge 2軸）
+- 軸ごとに勝敗判定 → 勝った軸数で総合勝敗 → Elo更新
+- 重み不要
+- Position bias対策（AB順ランダム化）
+
+---
+
+## 【4】Read-Onlyマウントによるファイル保護: 正式採用
+
+第2版レポート（gunshi_task_250b）課題3対策Bの設計を正式採用とする。
+
+**確定仕様:**
+```yaml
+docker_mounts:
+  - source: ./tests/
+    target: /tests/
+    mode: ro                # Read-Only
+  - source: ./evaluator/
+    target: /evaluator/
+    mode: ro                # Read-Only
+  - source: ./workspace/
+    target: /workspace/
+    mode: rw                # チーム作業領域（Read-Write）
+```
+
+テスト・評価スクリプトはコンテナ内から改変不可。チームが操作できるのは `/workspace/` のみ。
+
+---
+
+## 【5】ベースライン固定ルール ★重要★
+
+### 5.1 ベースラインの定義
+
+**ベースライン = 現行のmulti-agent-shogun体制（packages/shogun-v1/）**
+
+これを「世代0」として固定し、全ての新体制はこのベースラインと比較される。
+
+### 5.2 固定ルール
+
+| ルール | 内容 |
+|---|---|
+| **固定対象** | packages/shogun-v1/ のスナップショット（gitタグで固定） |
+| **変更禁止** | ベースラインパッケージは一切変更しない。バグ修正もしない |
+| **常時参加** | 毎世代、ベースラインは必ず評価に参加する（slot 0として固定） |
+| **比較基準** | 新体制はベースラインとのペアワイズで「進歩」を測定 |
+
+### 5.3 「明確な進歩」の判定基準
+
+**進歩の定義: ベースラインに対して決定論的軸で過半数勝利を3世代連続で達成**
+
+```
+判定フロー:
+
+世代N: 体制X vs baseline
+  → 決定論的5軸で X が 3勝以上 → 「候補」フラグ
+
+世代N+1: 体制X' (Xの後継) vs baseline
+  → 決定論的5軸で X' が 3勝以上 → 「候補継続」
+
+世代N+2: 体制X'' (X'の後継) vs baseline
+  → 決定論的5軸で X'' が 3勝以上 → ★「明確な進歩」確定
+```
+
+**なぜ3世代連続か:**
+- 1世代だけの勝利は偶然（タスクサンプリングの運）の可能性がある
+- 3世代連続なら体制の改善が安定的であることを示す
+- LLMの非決定性による揺れを吸収できる
+
+### 5.4 ベースライン更新の手順
+
+「明確な進歩」が確定した場合:
+
+```
+1. 新チャンピオンを packages/gen{N}_champion/ として保存
+2. 殿に通知: 「ベースライン更新候補が出ました」
+3. 殿の承認後、ベースラインを更新:
+   - packages/shogun-v1/ → packages/shogun-v1/ (変更なし、歴代記録)
+   - packages/gen{N}_champion/ → 新ベースラインとしてslot 0に配置
+4. Eloレーティングはリセットせず継続（新ベースラインの初期Eloは旧ベースラインの最終Elo）
+```
+
+**重要: 殿の承認が必須。自動更新は行わない。**
+
+### 5.5 ベースラインの複数化（将来）
+
+Phase 3以降、十分なデータが蓄積されたら:
+- 「コード品質チャンピオン」「速度チャンピオン」「堅牢性チャンピオン」等の軸別ベースラインを追加
+- ただしPhase 1-2ではベースラインは1つに固定（複雑化回避）
+
+---
+
+## 【6】Chaos Engineering → 将来検討、継続率・完遂率で評価
+
+### 6.1 設計変更
+
+第2版レポート（gunshi_task_250b）課題6のChaos Engineering関連設計を「将来検討」に移動。
+故意障害注入は行わず、自然な完遂率・継続率で堅牢性を評価する。
+
+### 6.2 継続率・完遂率の測定方法
+
+| 指標 | 定義 | 測定方法 |
+|---|---|---|
+| **タスク完遂率** | 割り当てタスクのうち最終成果物を出力した割合 | `completed_tasks / assigned_tasks` |
+| **途中停止率** | タスク開始後、成果物未出力で停止した割合 | `(assigned - completed - explicitly_failed) / assigned` |
+| **継続率** | タイムアウトまでに何らかの出力を生成し続けた割合 | `tasks_with_any_output / assigned_tasks` |
+| **自律復帰率** | エラー発生後に人手介入なしで作業を再開した割合 | `auto_recovered / total_errors` |
+
+**測定の実装:**
+```bash
+# 評価パイプラインが各タスクの状態を監視
+# task_monitor.sh (コンテナ外で実行)
+
+while task_in_progress; do
+    # 30秒ごとにチェック
+    agent_outputs=$(count_new_files /workspace/queue/reports/)
+    agent_messages=$(count_new_entries /workspace/queue/inbox/)
+
+    if no_activity_for 300; then  # 5分間無活動
+        log "STALL detected at $(date)"
+        stall_count=$((stall_count + 1))
+    fi
+
+    sleep 30
+done
+
+# 最終結果:
+# - 完遂率: completed / assigned
+# - 途中停止率: stalled / assigned (5分以上無活動でタスク未完了)
+# - 継続率: (assigned - stalled) / assigned
+```
+
+### 6.3 評価軸への統合
+
+第3版の7軸評価に統合:
+
+```
+軸④ 堅牢性（決定論的）:
+  旧: 障害注入後の復旧成功率
+  新: タスク完遂率 × (1 - 途中停止率)
+
+  体制A: 完遂率90%, 停止率5% → 0.90 × 0.95 = 0.855
+  体制B: 完遂率85%, 停止率15% → 0.85 × 0.85 = 0.7225
+  → A勝ち
+```
+
+Chaos Engineeringは将来Phase 3以降で、素の継続率が十分に安定してから導入を検討する。
+
+---
+
+## 【7】評価方法の提案: 正式採用
+
+第3版レポート（gunshi_task_255a）セクションAの軸別ペアワイズ比較方式を正式採用。変更なし。
+
+---
+
+## 設計決定サマリ（第2回フィードバック反映後）
+
+| 項目 | 確定仕様 | ステータス |
+|---|---|---|
+| 体制パッケージ | manifest.yaml + instructions/ + config/ + scripts/ + CLAUDE.md | 新規設計 |
+| Docker配布 | ベースイメージ + 体制パッケージCOPY | 新規設計 |
+| WebArena環境 | Windows機 (WSL2 + Docker) → Mac から HTTP接続 | 新規設計 |
+| ペアワイズjudge | 7軸（決定論5+LLM2）、重み不要 | 正式採用（変更なし） |
+| Read-Onlyマウント | /tests/, /evaluator/ をro | 正式採用（変更なし） |
+| ベースライン | shogun-v1固定、3世代連続過半数勝利で更新、殿承認必須 | 新規設計 |
+| 堅牢性評価 | 素の完遂率・継続率（Chaos Engineeringは将来） | 設計変更 |
+| 評価方法 | 軸別ペアワイズ比較 → Elo | 正式採用（変更なし） |
+
+---
+
+## North Star Alignment
+
+```yaml
+north_star_alignment:
+  status: aligned
+  reason: |
+    殿の7フィードバック全てに対応。特に:
+    - 体制パッケージ仕様により歴代体制の完全再現性を確保
+    - ベースライン固定ルール（3世代連続+殿承認）で「明確な進歩」を厳密に定義
+    - Chaos Engineeringを見送り素の完遂率で評価する方針で複雑性を抑制
+    - WebArenaのWindows機分離実行でMacストレージ問題を解決
+  risks_to_north_star:
+    - "体制パッケージの構造がフレームワーク固有（tmux+inbox方式）で汎用性が低い"
+    - "ベースライン更新基準「3世代連続」が厳しすぎる可能性（初期は2世代でも検討）"
+    - "Windows-Mac間のHTTP接続でWebArenaのレイテンシが問題になる可能性"
+```
