@@ -11,7 +11,7 @@
 #   T-005: agent_is_busy() 非Claude CLI時にpane解析フォールバック
 #   T-006: stop_hook_active=True時にもフラグが作成される (C-001修正)
 #   T-007: /clear cooldown (LAST_CLEAR_TS) がフラグより優先される (return 0)
-#   T-008: nudge送信後にフラグが削除される
+#   T-008: nudge送信後にフラグが保持される（デッドロック防止）
 #   T-009: shutsujin時 (rm -f /tmp/shogun_idle_*) で全フラグがクリアされる
 
 SCRIPT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -236,9 +236,9 @@ YAML
     [ "$status" -eq 0 ]  # 0 = busy (cooldown overrides idle flag)
 }
 
-# ─── T-008: nudge送信後にフラグ削除 ───
+# ─── T-008: nudge送信後にフラグ保持（デッドロック防止） ───
 
-@test "T-008: send_wakeup removes idle flag after sending nudge" {
+@test "T-008: send_wakeup preserves idle flag after sending nudge" {
     # Create idle flag (agent was idle)
     touch "$IDLE_FLAG_DIR/shogun_idle_test_idle_agent"
 
@@ -252,8 +252,10 @@ YAML
     # Nudge was sent (send-keys)
     grep -q "send-keys.*inbox1" "$MOCK_LOG"
 
-    # Flag should be removed after nudge (agent is now busy processing)
-    [ ! -f "$IDLE_FLAG_DIR/shogun_idle_test_idle_agent" ]
+    # Flag must be PRESERVED after nudge. nudge送信≠エージェント起動確認。
+    # フラグを消すと agent_is_busy()=true → 以降のnudge全スキップ → デッドロック。
+    # フラグはエージェントが実際に作業開始した時に自然消滅する（stop_hook設計と整合）。
+    [ -f "$IDLE_FLAG_DIR/shogun_idle_test_idle_agent" ]
 }
 
 # ─── T-009: shutsujin時に全フラグクリア ───

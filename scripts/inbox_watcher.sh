@@ -817,7 +817,9 @@ send_wakeup() {
     if timeout 5 tmux send-keys -t "$PANE_TARGET" "$nudge" 2>/dev/null; then
         sleep 0.3
         timeout 5 tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null || true
-        rm -f "${IDLE_FLAG_DIR:-/tmp}/shogun_idle_${AGENT_ID}"
+        # NOTE: アイドルフラグは削除しない。nudge送信≠エージェント起動確認。
+        # フラグを消すと agent_is_busy()=true → 以降のnudge全スキップ → デッドロック。
+        # フラグはエージェントが実際に作業開始した時に自然消滅する（stop_hook設計と整合）。
         echo "[$(date)] Wake-up sent to $AGENT_ID (${unread_count} unread)" >&2
         return 0
     fi
