@@ -194,7 +194,93 @@ cmd_258調査結果（context/retro-forge.md参照）より:
 
 ---
 
-### Round 2〜5
+### Round 2
+
+**全体改善点（Round 1 → Round 2）:**
+- 全員CPU+MB変更（ルール遵守）: 3名とも Slot 1/440BX + PII 350MHz から脱却
+- 全員RIVA TNT2採用: Voodoo3から転換（2D専用MTGにはGlide不要）
+- 全員MTGクロック根拠追加: VOGONS/AnandTech/MicroProse公式マニュアルより
+- 全員コスト確定値化: 「約」「〜」排除
+
+#### 足軽1号 — Round 2提案
+
+**コンセプト**: 「国内完結・Socket 370の合理的選択 — コスト半減、入手は倍速」
+
+| カテゴリ | 製品名 | 入手先 | 価格 |
+|---|---|---|---|
+| CPU | Celeron 433MHz PPGA (Socket 370) | ヤフオク | ¥500 |
+| MB | ASUS CUBX-L (440BX, Socket 370) | ヤフオク | ¥5,000 |
+| GPU | RIVA TNT2 M64 32MB AGP | ヤフオク | ¥2,500 |
+| サウンド | Yamaha YMF744B-V PCI | ヤフオク | ¥2,000 |
+| メモリ | PC100 128MB DIMM | メルカリ | ¥1,000 |
+| ストレージ | CF-IDE変換+8GB CF | Amazon | ¥3,200 |
+| 電源 | 玄人志向 400W ATX | Amazon | ¥4,500 |
+| ケース | ATXミドルタワー | ヤフオク | ¥2,000 |
+| OS | Windows 98 SE DSP版 | ヤフオク | ¥1,800 |
+
+**合計: ¥22,500**（確定値）
+
+- **Round 1からの主な改善**: eBay依存完全排除→全パーツ国内調達、¥36,500→¥22,500（38%減）
+- **差別化**: 3名中最安値・全国内調達・Socket 370選択
+- **MTGクロック対処**: cpukiller3 + 200-400MHz帯が快適ゾーン（VOGONS Wiki/AnandTech根拠）
+- **コンデンサ対策**: 購入前写真確認必須＋リキャップ予備費計上
+
+#### 足軽2号 — Round 2提案
+
+**コンセプト**: 「Celeron 300A伝説 — 1998年オーバークロック文化の象徴」
+
+| カテゴリ | 製品名 | 入手先 | 価格 |
+|---|---|---|---|
+| CPU | Celeron 300A Slot 1 (SL2WM, Mendocino) | eBay | ¥5,700 |
+| MB | Intel 440BX Slot 1 ATX MB | ヤフオク | ¥5,000 |
+| GPU | RIVA TNT2 M64 AGP 32MB | eBay | ¥4,500 |
+| サウンド | Yamaha YMF744B-V PCI | ヤフオク | ¥2,500 |
+| メモリ | PC100 128MB DIMM | メルカリ | ¥1,000 |
+| ストレージ | CF-IDE変換+8GB CF | Amazon | ¥3,200 |
+| 電源 | 玄人志向 400W ATX | Amazon | ¥4,500 |
+| ケース | ATXミドルタワー | ヤフオク | ¥2,000 |
+
+**合計: ¥28,400**（確定値）
+
+- **Round 1からの主な改善**: GPU Voodoo3→TNT2でコスト削減、FSBアンダークロック戦略追加、雰囲気⤴
+- **差別化**: Celeron 300A（PC自作史上最有名OC CPU）、FSB変更で225〜450MHz可変制御（他2名にない機能）
+- **MTGクロック対処**: 三段構え — ①300MHz定格確認 ②cpukiller3(40-70%) ③BIOS FSB 50MHz→225MHz
+- **コンデンサ対策**: 購入前写真確認+リキャップ費¥2,000-3,000+代替ボード確保
+
+#### 足軽3号 — Round 2提案
+
+**コンセプト**: 「Socket 370革命 — Celeron 466MHz + Intel 815Eでコスパ逆転」
+
+| カテゴリ | 製品名 | 入手先 | 価格 |
+|---|---|---|---|
+| CPU | Celeron 466MHz (SL3EH, Socket 370, Mendocino) | eBay | ¥5,542 |
+| MB | ASUS CUSL2 (Intel 815E, Socket 370) | ヤフオク | ¥6,000 |
+| GPU | RIVA TNT2 M64 32MB AGP | ヤフオク | ¥3,000 |
+| サウンド | Yamaha YMF744B-V PCI | ヤフオク | ¥3,000 |
+| メモリ | PC133 256MB SDRAM | メルカリ | ¥1,500 |
+| ストレージ | CF-IDE変換+16GB CF | Amazon | ¥4,000 |
+| 電源 | 玄人志向 400W ATX | Amazon | ¥4,500 |
+| ケース | ATXミドルタワー | ヤフオク | ¥2,000 |
+| OS | Windows 98 SE DSP版 | ヤフオク | ¥2,500 |
+
+**合計: ¥32,042**（確定値）
+
+- **Round 1からの主な改善**: P2B-B→CUSL2(Intel 815E)に完全変更、コスト確定値化、GPU独自調達
+- **差別化**: Intel 815E内蔵GPU（i752）フォールバック搭載、3名中唯一の815Eプラットフォーム
+- **MTGクロック対処**: Celeron 466MHzはPII 380-420MHz相当。cpukiller3で10-20%スロットル→最適速度
+- **コンデンサ対策**: Nichicon採用ボード選定方針明記。815E世代のリスク評価済み
+
+#### Round 2 暫定比較表
+
+| 参加者 | プラットフォーム | CPU | 合計 | 主な強み |
+|---|---|---|---|---|
+| 足軽1号 | Socket 370 / 440BX (CUBX-L) | Celeron 433MHz | **¥22,500** | 最安値・全国内調達 |
+| 足軽2号 | Slot 1 / 440BX | Celeron 300A | **¥28,400** | 伝説のOC CPU・FSB可変制御 |
+| 足軽3号 | Socket 370 / Intel 815E (CUSL2) | Celeron 466MHz | **¥32,042** | 統合GPU搭載・最新プラットフォーム |
+
+**軍師評価待ち（gunshi_task_260_r2）**
+
+### Round 3〜5
 （後続ラウンドで追記）
 
 ---
