@@ -278,9 +278,146 @@ cmd_258調査結果（context/retro-forge.md参照）より:
 | 足軽2号 | Slot 1 / 440BX | Celeron 300A | **¥28,400** | 伝説のOC CPU・FSB可変制御 |
 | 足軽3号 | Socket 370 / Intel 815E (CUSL2) | Celeron 466MHz | **¥32,042** | 統合GPU搭載・最新プラットフォーム |
 
-**軍師評価待ち（gunshi_task_260_r2）**
+#### 軍師評価
 
-### Round 3〜5
+**評価日:** 2026-03-18
+
+| 参加者 | コンセプト | MTG互換(30) | 安定性(25) | コスト(20) | 入手性(15) | 雰囲気(10) | **合計** |
+|---|---|---|---|---|---|---|---|
+| 🏆 足軽1号 | 国内完結・Socket 370 | 24 | 21 | 18 | 14 | 5 | **82** |
+| 足軽2号 | Celeron 300A伝説 | 28 | 16 | 13 | 10 | 9 | **76** |
+| 足軽3号 | Socket 370革命・815E | 22 | 19 | 11 | 11 | 5 | **68** |
+
+**Round 2 優勝: 足軽1号** — Round 1の弱点（eBay依存・高コスト）を完全克服。全国内調達・¥22,500最安で逆転優勝。
+
+**全体講評:**
+- Round 1指摘の改善度が勝敗を分けた。足軽1号の「eBay全排除+38%コスト削減」が圧倒的
+- 足軽2号のFSB可変制御は技術的に最優秀だが、MB型番不明が致命的減点
+- 足軽3号は815Eの大胆な選択も時代ズレ・コスト高が解消されず2ラウンド連続68点
+- 共通弱点: GPU全員TNT2 M64で横並び再発、MTG具体的動作報告の引用なし
+
+**通算成績:** 足軽1号 1勝(R2)・足軽2号 1勝(R1)・足軽3号 0勝
+
+詳細評価: queue/reports/gunshi_report.yaml 参照
+
+### Round 3
+
+**ステータス:** 全提案受付完了 → 軍師評価待ち（gunshi_task_260_r3）
+
+#### 足軽1号 — Round 3提案
+
+**コンセプト**: 「1998年の自作魂 — Slot 1の黒い弾丸と伝説のBH6」
+
+**Round 2からの改善点:**
+1. **雰囲気大幅強化**: Celeron 433MHz（廉価版で雰囲気5/10最低）→ **PII 333MHz Slot 1カートリッジ**（1998年自作PCの象徴的パーツ）
+2. **GPU差別化**: TNT2 M64（3名横並び）→ **Matrox Millennium G400**（MTGは2Dゲーム、2D画質最強のMatrox）
+3. **MTG実機動作報告3件引用**: AnandTechで「PII 333MHzがShandalar適正速度」と直接報告されたクロック
+4. **CPU+MB変更**: Celeron 433MHz+CUBX-L → **PII 333MHz+ABIT BH6**（Slot 1に回帰）
+
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 |
+|---|---|---|---|---|
+| CPU | Intel Pentium II 333MHz (SL2S5, Deschutes, Slot 1) | https://auctions.yahoo.co.jp/closedsearch/closedsearch/2084044828/ | ¥1,500 | 中古 |
+| MB | ABIT BH6 (Intel 440BX, Slot 1, ATX) | https://auctions.yahoo.co.jp/closedsearch/closedsearch/440bx/2084039547/ | ¥5,000 | 中古 |
+| GPU | Matrox Millennium G400 16MB AGP | https://auctions.yahoo.co.jp/closedsearch/closedsearch/matrox%20g400/0/ | ¥3,000 | 中古 |
+| サウンド | Yamaha YMF744B-V PCI | https://auctions.yahoo.co.jp/closedsearch/closedsearch/ymf744/23459/ | ¥2,000 | 中古 |
+| メモリ | PC100 128MB DIMM | https://jp.mercari.com/search?keyword=PC100+128MB+SDRAM | ¥1,000 | 中古 |
+| ストレージ | CF-IDE変換+CF 8GB | https://www.amazon.co.jp/dp/B001EIG7YA | ¥3,200 | 新品 |
+| 電源 | ATX 300W新品 | https://www.amazon.co.jp/電源ユニット-300W-399W/s | ¥4,300 | 新品 |
+| ケース | ATXミドルタワー | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 |
+| コンデンサ予備費 | 低ESR電解コンデンサ10個 | https://www.amazon.co.jp/s?k=低ESR+電解コンデンサ+105℃ | ¥2,000 | 新品 |
+
+**合計: ¥24,000**（コンデンサ予備費込み）
+
+**MTGクロック対処（実機動作報告3件）:**
+- AnandTech: ユーザーが「**PII 333MHzでShandalarを正しい速度で動かしたい**」と組み立てた（直接的な報告）
+- AnandTech: PII 400MHzでは「AI手番に最大10分」だがゲーム速度は正常 → 333MHzはさらに最適
+- AnandTech + abandonwaredos: PIII以上で「Shandalarマップが速すぎて操作不能」→ PII 333MHzは安全圏
+
+速度制御三段構え: ①PII 333MHz定格 ②cpukiller3(40-70%) ③ABIT BH6のBIOS FSB変更（66/75/83/100MHz）
+
+#### 足軽2号 — Round 3提案
+
+**Round 2からの改善点:**
+1. **MB型番を具体化（Round 2最大敗因）**: 「440BX Slot 1 ATXマザーボード」（型番不明で安定性16/25） → **ASUS P2B-F**（具体型番、ヤフオク実出品URL付き）。ASUSは日本製コンデンサ（Nichicon/Sanyo系）採用率が高く、ABITのJackcon/Teapo問題を回避。
+2. **GPU差別化（全員TNT2 M64横並び問題を解消）**: TNT2 M64 → **ATI Rage 128 GL 32MB AGP**。128bit メモリバス（TNT2 M64の64bitの2倍）。MTGは2Dカードゲームであり、ATI伝統の高画質2D描画が活きる。
+3. **入手性の大幅改善**: eBay依存（CPU+GPU海外） → **全パーツ国内調達**（ヤフオク/メルカリ/Amazon.co.jp）。
+4. **コスト27%削減**: ¥28,400 → **¥20,700**。足軽1号のRound 2最安値¥22,500をも下回る。
+5. **MTG実機動作報告の具体的引用追加**: AnandTech「PII 333MHzでShandalarを正しい速度に」、VOGONS「VIA C3 533MHz≈PII 266MHzでShandalar用PC構築」を引用。
+6. **CPU+MB変更（ルール遵守）**: Celeron 300A + 汎用440BX → **Pentium II 350MHz + ASUS P2B-F**。
+
+**コンセプト**: 「正統派PII 350MHz — 全パーツ国内完結・具体型番・ATI差別化の堅実構成」
+
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 | リスク評価 |
+|---|---|---|---|---|---|
+| CPU | Intel Pentium II 350MHz (SL2S6, Deschutes, Slot 1) | https://auctions.yahoo.co.jp/search/search/pentium%20ii/23336/ | ¥1,500 | 中古 | 低 |
+| マザーボード | ASUS P2B-F (Intel 440BX, Slot 1, ATX) | https://auctions.yahoo.co.jp/jp/auction/n1222699351 | ¥3,500 | 中古（動作未確認） | 中（コンデンサ・動作要確認） |
+| メモリ | PC100 SDRAM 128MB DIMM | https://jp.mercari.com/search?keyword=PC100+128MB | ¥1,000 | 中古 | 低 |
+| GPU | ATI Rage 128 GL 32MB AGP (109-51900-01) | https://auctions.yahoo.co.jp/jp/auction/p1221019358 | ¥3,500 | 中古・動作確認済 | 低 |
+| サウンドカード | Creative Sound Blaster Live! 5.1 SB0100 PCI | https://auctions.yahoo.co.jp/jp/auction/o1222582812 | ¥1,500 | 中古・動作品 | 低 |
+| ストレージ（アダプタ） | CF-IDE 3.5" 変換アダプター 40ピン | https://www.amazon.co.jp/dp/B097BJX34J | ¥1,200 | 新品 | 低 |
+| ストレージ（CF） | コンパクトフラッシュ 8GB | https://www.amazon.co.jp/dp/B0096CGOH6 | ¥2,000 | 新品 | 低 |
+| 電源ユニット | 玄人志向 KRPW-L5-400W/80+ (ATX) | https://www.amazon.co.jp/dp/B010Q2VN98 | ¥4,500 | 新品 | 低 |
+| ケース | ATXミドルタワー中古 | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 | 低 |
+
+**合計: ¥20,700**
+
+**MTGクロック対処（コミュニティ実機動作報告つき）:**
+
+*コミュニティ調査結果:*
+- **AnandTech** ("Old Game runs too fast", 2004): ユーザーが「**PII 333MHzを組んでShandalarを正しい速度で動かしたい**」と発言。別ユーザーは「**PII 400MHzではAI手番に10分**」と報告（＝ゲーム速度として適正域）。PIII以上は「速すぎて操作不能」。
+- **VOGONS** ("VIA EPIA 5000"): ユーザー dav3yb が「**MicroProse MTG Shandalarをプレイするため**」にVIA C3 533MHzシステムを構築。回答者が「**C3のIPCはPII/PIIIの約半分 → 533MHz C3 ≈ PII 266MHz相当**」と分析。つまりPII 266MHz相当がShandalar用として実際に選ばれた速度帯。
+- **VOGONS** ("MTG Battlemage"): 「**Throttle + CPUKillerの組み合わせが最良の結果**」と複数報告。
+
+*本構成の速度戦略:* PII 350MHzは実証済み動作域（PII 266MHz〜400MHz）の中央値。三段構え: ①PII 350MHz定格 ②cpukiller3で40-70%制限 ③ASUS P2B-FのBIOS FSB変更（66MHz→233MHz / 100MHz→350MHz）。
+
+---
+
+#### 足軽3号 — Round 3提案
+
+**コンセプト**: 「ABIT BH6の逆襲 — 伝説の名板 + PII 333MHz + Matrox G400で2D最適化」
+
+**Round 2からの改善点:**
+1. **プラットフォーム時代感回復**: Intel 815E(2000年)→ **440BX(1998年)** に回帰。軍師指摘の「時代ズレ」を完全解消
+2. **コスト38%削減**: ¥32,042→**¥23,500**（確定値）。3ラウンド中最大の改善幅
+3. **GPU完全差別化**: TNT2 M64（3名横並び）→ **Matrox Millennium G400**。MTGは2Dゲーム → 2D最強カードが最適解
+4. **MTG動作報告4件引用**: AnandTechでPII 333MHzをMTGのために組んだユーザー報告など
+5. **CPU+MB変更**: CUSL2+Celeron 466MHz → **ABIT BH6+PII 333MHz**（ルール遵守）
+6. **伝説的マザーボード採用**: ABIT BH6はTom's Hardware「Best 440BX Board」選出
+
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 |
+|---|---|---|---|---|
+| CPU | Intel Pentium II 333MHz (SL2KA, Deschutes, Slot 1) | https://auctions.yahoo.co.jp/search/search/Pentium%20II%20333/2084044828/ | ¥800 | 中古 |
+| MB | ABIT BH6 Rev.1.1 (Intel 440BX, Slot 1, ATX) | https://www.ebay.com/itm/336009537919 | ¥6,500 | 中古・動作確認済 |
+| GPU | Matrox Millennium G400 32MB AGP (DualHead) | https://www.ebay.com/itm/146253155730 | ¥4,000 | 中古 |
+| サウンド | Yamaha YMF744B-V PCI | https://auctions.yahoo.co.jp/closedsearch/closedsearch/ymf744/23459/ | ¥2,000 | 中古 |
+| メモリ | PC100 SDRAM 128MB DIMM | https://jp.mercari.com/search?keyword=PC100+128MB | ¥1,000 | 中古 |
+| ストレージ | CF-IDE変換+CF 8GB | https://www.amazon.co.jp/dp/B097BJX34J | ¥3,200 | 新品 |
+| 電源 | ATX 300W新品 | https://www.amazon.co.jp/s?k=ATX電源+300W | ¥4,000 | 新品 |
+| ケース | ATXミドルタワー | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 |
+
+**合計: ¥23,500**（確定値）
+
+**MTGクロック対処（実機動作報告4件）:**
+- AnandTech: 「**PII 333MHzを組んでShandalarを正しい速度で動かしたい**」（直接的ユーザー報告）
+- AnandTech: PII 400MHzではゲーム速度正常（＝333MHzも適正域）
+- VOGONS: VIA C3 533MHz（≈PII 266MHz相当）でShandalar用PC構築 → 266MHzでも動作可能
+- MicroProse公式: 推奨Pentium 120MHz → 333MHzはその2.8倍で調整余地十分
+
+速度制御: ①PII 333MHz定格確認 ②cpukiller3(80-90%) ③BH6 SoftMenu III FSB変更
+
+#### Round 3 暫定比較表
+
+| 参加者 | CPU | MB | GPU | 合計 | 主な強み |
+|---|---|---|---|---|---|
+| 足軽1号 | PII 333MHz | ABIT BH6 | Matrox G400 | **¥24,000** | 1998年雰囲気・MTG実証済みクロック |
+| 足軽2号 | PII 350MHz | ASUS P2B-F | ATI Rage 128 GL | **¥20,700** | 最安値・全国内調達・日本製コンデンサMB |
+| 足軽3号 | PII 333MHz | ABIT BH6 | Matrox G400 | **¥23,500** | コスト削減・時代感回復・MTG実証済みクロック |
+
+⚠️ 足軽1号・3号が同一構成（BH6+PII 333MHz+G400）に収束。差別化は価格（¥500差）のみ。軍師評価で減点要因となる可能性あり。
+
+**軍師評価待ち（gunshi_task_260_r3）**
+
+### Round 4〜5
 （後続ラウンドで追記）
 
 ---
