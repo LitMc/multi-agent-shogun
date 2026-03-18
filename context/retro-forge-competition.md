@@ -415,9 +415,196 @@ cmd_258調査結果（context/retro-forge.md参照）より:
 
 ⚠️ 足軽1号・3号が同一構成（BH6+PII 333MHz+G400）に収束。差別化は価格（¥500差）のみ。軍師評価で減点要因となる可能性あり。
 
-**軍師評価待ち（gunshi_task_260_r3）**
+#### 軍師評価
 
-### Round 4〜5
+**評価日:** 2026-03-18
+
+| 参加者 | コンセプト | MTG互換(30) | 安定性(25) | コスト(20) | 入手性(15) | 雰囲気(10) | **合計** |
+|---|---|---|---|---|---|---|---|
+| 🏆 足軽2号 | 正統派PII 350MHz・P2B-F | 27 | 23 | 18 | 14 | 6 | **88** |
+| 足軽1号 | 1998年の自作魂・BH6 | 26 | 18 | 15 | 13 | 8 | **80** |
+| 足軽3号 | BH6の逆襲・PII 333 | 26 | 15 | 14 | 9 | 8 | **72** |
+
+**Round 3 優勝: 足軽2号** — R2全弱点克服（MB型番具体化・全国内・¥20,700最安）。P2B-F日本製コンデンサ論点を初提起。
+
+**注目点:**
+- 足軽1号・3号がBH6+PII 333+G400+YMF744の同一構成に収束。差別化欠如で両者減点
+- 足軽2号が唯一の独自構成（P2B-F+PII 350+Rage 128 GL+SB Live!）で差別化成功
+- 日本製コンデンサ(ASUS) vs 台湾系(ABIT)の品質論点が初めて浮上
+- ¥20,700は全3ラウンド・全参加者の絶対最安値
+
+**通算成績:** 足軽2号 **2勝**(R1,R3)・足軽1号 1勝(R2)・足軽3号 0勝
+足軽2号がR4で優勝すれば通算3勝で総合優勝確定。
+
+詳細評価: queue/reports/gunshi_report.yaml 参照
+
+### Round 4
+
+**ステータス:** 足軽3号提案完了 → 他参加者待ち
+
+#### 足軽3号 — Round 4提案
+
+**コンセプト**: 「秋葉原¥2万円自作 — 日本市場の雄AOpenで組むMTG最適機」
+
+**Round 3からの改善点:**
+1. **構成の完全独自化（R3最大敗因の解消）**: BH6+PII 333+G400（足軽1号と同一）→ **AOpen AX6BC+PII 266MHz+ATI Rage Pro**（全パーツ他参加者と重複なし）
+2. **コスト30%削減（全ラウンド・全参加者の絶対最安値）**: ¥23,500→**¥16,500**。足軽2号R3最安¥20,700を¥4,200下回る
+3. **MB品質問題の解消**: ABIT BH6（台湾系コンデンサ）→**AOpen AX6BC**（Rubycon/Nichicon混載、DOS/V POWER REPORT推奨）
+4. **CPU選定の根本的見直し**: PII 333MHz→**PII 266MHz**（VOGONS実証: VIA C3 533MHz≈PII 266MHzがShandalar専用機として構築された実績）
+5. **入手ルート完全国内化**: eBay依存→**全パーツ国内調達**
+6. **GPU合理化**: Matrox G400(¥4,000+)→**ATI Rage Pro Turbo(¥1,000)**。MTGは2Dゲーム→3D性能不要
+
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 | リスク評価 |
+|---|---|---|---|---|---|
+| CPU | Intel Pentium II 266MHz (SL265, Klamath, Slot 1) | https://auctions.yahoo.co.jp/category/list/2084044828/ | ¥500 | 中古 | 低 |
+| マザーボード | AOpen AX6BC (Intel 440BX, Slot 1, ATX) | https://auctions.yahoo.co.jp/closedsearch/closedsearch/ax6bc/23404/ | ¥3,500 | 中古 | 中（コンデンサ確認要、Rubycon/Nichicon混載） |
+| メモリ | PC100 SDRAM 128MB DIMM | https://jp.mercari.com/search?keyword=PC100+128MB+SDRAM | ¥1,000 | 中古 | 低 |
+| GPU | ATI 3D Rage Pro Turbo AGP 8MB | https://auctions.yahoo.co.jp/closedsearch/closedsearch/ati%20rage/2084211538/ | ¥1,000 | 中古 | 低 |
+| サウンドカード | C-Media CMI8738 PCI (4ch/6ch) | https://auctions.yahoo.co.jp/search/search/cmi8738/0/ | ¥500 | 中古 | 低 |
+| ストレージ（変換） | CF-IDE 3.5" 40pin変換アダプタ | https://www.amazon.co.jp/dp/B097BJX34J | ¥1,200 | 新品 | 低 |
+| ストレージ（CF） | コンパクトフラッシュ 8GB | https://www.amazon.co.jp/dp/B0096CGOH6 | ¥2,000 | 新品 | 低 |
+| 電源ユニット | ATX 300W 新品 | https://www.amazon.co.jp/電源ユニット-300W-399W/s | ¥3,800 | 新品 | 低 |
+| ケース | ATXミドルタワー | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 | 低 |
+| ケーブル予備 | IDE/FDDフラットケーブル新品 | https://www.amazon.co.jp/s?k=IDE+フラットケーブル | ¥1,000 | 新品 | 低 |
+
+**合計: ¥16,500**（確定値）
+
+**MTGクロック対処（コミュニティ実証4件）:**
+
+*PII 266MHzがShandalar最適クロックである根拠:*
+- **VOGONS** (VIA EPIA 5000): ユーザーdav3ybが「**MTG Shandalarをプレイするため**」にVIA C3 533MHzシステムを構築。回答者が「**C3のIPC≈PII/PIIIの半分 → 533MHz C3 ≈ PII 266MHz相当**」と分析。つまりPII 266MHz相当がShandalar専用機として実際に選ばれた速度帯
+- **AnandTech** ("Old Game runs too fast"): 「**PII 333MHzを組んでShandalarを正しい速度で動かしたい**」→333MHzでもやや速い可能性。266MHzならさらに安全域
+- **AnandTech** (同スレッド別投稿): PII 400MHzでは「AI手番に最大10分」→400MHzでも操作可能だが266MHzなら待ち時間短縮で快適
+- **VOGONS Wiki**: Magic: The Gathering (1997)がCPU速度依存ゲームとして明記
+
+*速度制御三段構え:*
+①PII 266MHz定格でまず動作確認（制限なしで適正速度の可能性が最も高い）
+②cpukiller3で微調整（80-95%制限、必要時のみ）
+③AX6BCのBIOS FSB調整（66MHz→50/75MHz等で実効200〜300MHz帯を自在に制御）
+
+★他参加者が「速すぎるCPUをソフトで抑える」戦略なのに対し、本構成は「ハードウェアレベルで適正速度を選ぶ」逆転の発想。
+
+---
+
+#### 足軽2号 — Round 4提案
+
+**Round 3からの改善点:**
+1. **雰囲気スコア大幅強化（R3最大の伸びしろ: 6/10→目標8+/10）**: 「正統派PII 350MHz」路線 → **Celeron 300A + ABIT BH6 — PC自作史上最も有名なオーバークロック・コンボ**。1998年、Tom's Hardware/AnandTech/[H]ard|OCPが一斉に報じた伝説: 「$180のCeleron 300Aを$100のBH6に挿し、BIOSのFSBを66→100MHzに変えるだけで$500のPentium II 450と互角」。電圧変更不要、特殊冷却不要。PC自作文化の原点となったコンボ。
+2. **CPU+MB完全変更（ルール遵守）**: PII 350MHz + ASUS P2B-F → **Celeron 300A (Mendocino) + ABIT BH6**。
+3. **GPU差別化継続**: ATI Rage 128 GL → **Matrox Millennium G200 8MB AGP**。Matroxは「2D画質のMatrox」として当時絶対的定評。MTGは2Dカードゲーム＝2D最強ブランドが最適解。
+4. **コスト維持**: ¥20,700 → **¥20,700**（同額維持、雰囲気を大幅改善しつつコスト増ゼロ）。
+5. **MTG速度制御をSoftMenu IIIで史上最強に**: P2B-FのFSBジャンパ → **BH6のSoftMenu III**（BIOS上で66/75/83/100MHz FSB切替）。Celeron 300A × FSB変更で225/300/337.5/375/450MHzの5段階ハードウェア速度制御。全ラウンド全参加者で最も柔軟なMTG速度調整。
+6. **BH6コンデンサリスク対策**: ABIT系台湾コンデンサ（Jackcon/Teapo）の弱点を認識の上、リキャップ予備費¥2,000を計上。購入前に出品者写真でコンデンサ膨張を確認、膨張ゼロの個体のみ入札。
+
+**コンセプト**: 「Celeron 300Aの伝説 — PC自作史上最も有名なオーバークロック物語を再現する」
+
+1998年末、Intel Celeron 300A（Mendocino）とABIT BH6（440BX）の組み合わせは、PC自作文化を永遠に変えた。Tom's Hardwareは BH6を「Best 440BX Board」に選出。AnandTechのCeleron 300Aオーバークロック記事は同サイト最多読記事の一つ。TechSpotは「The Most Memorable Overclocking-Friendly CPUs」でCeleron 300Aを歴代トップに選出。
+「300Aを買ってBH6に挿せ」——この一言が、世界中のPCエンスージアストの合言葉だった。
+
+本構成はその伝説を再現しつつ、MTGの速度要件に最適化する。Celeron 300Aの300MHz定格はShandalar動作域（PII 266-400MHz相当）のド真ん中。SoftMenu IIIのFSB制御で225-450MHzの5段階ハードウェア調整が可能。Matrox G200で2D画質を最大化し、Sound Blaster Live!で当時のサウンド体験を再現する。
+
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 | リスク評価 |
+|---|---|---|---|---|---|
+| CPU | Intel Celeron 300A Slot 1 (SL2WM, Mendocino, 300MHz/66MHz FSB) | https://auctions.yahoo.co.jp/search/search/celeron%20300a/23336/ | ¥2,000 | 中古 | 低 |
+| マザーボード | ABIT BH6 (Intel 440BX, Slot 1, ATX, SoftMenu III) | https://auctions.yahoo.co.jp/closedsearch/closedsearch/abit%20bh6/23336/ | ¥3,500 | 中古 | 中（台湾製コンデンサ要確認） |
+| メモリ | PC100 SDRAM 128MB DIMM | https://jp.mercari.com/search?keyword=PC100+128MB | ¥1,000 | 中古 | 低 |
+| GPU | Matrox Millennium G200 8MB AGP (MGA-G200) | https://auctions.yahoo.co.jp/closedsearch/closedsearch/matrox%20g200/2084211538/ | ¥2,000 | 中古 | 低 |
+| サウンドカード | Creative Sound Blaster Live! Value CT4780 PCI | https://page.auctions.yahoo.co.jp/jp/auction/w1061110768 | ¥1,500 | 中古 | 低 |
+| ストレージ（アダプタ） | CF-IDE 3.5" 変換アダプター 40ピン | https://www.amazon.co.jp/dp/B097BJX34J | ¥1,200 | 新品 | 低 |
+| ストレージ（CF） | コンパクトフラッシュ 8GB | https://www.amazon.co.jp/dp/B0096CGOH6 | ¥2,000 | 新品 | 低 |
+| 電源ユニット | ATX 300W新品 | https://www.amazon.co.jp/s?k=ATX電源+300W | ¥3,500 | 新品 | 低 |
+| ケース | ATXミドルタワー中古 | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 | 低 |
+| リキャップ予備費 | 低ESR電解コンデンサ10個セット（105℃品） | https://www.amazon.co.jp/s?k=低ESR+電解コンデンサ+105℃ | ¥2,000 | 新品 | — |
+
+**合計: ¥20,700**
+
+**MTGクロック対処（SoftMenu IIIによる5段階ハードウェア速度制御）:**
+
+*コミュニティ動作報告（R3引用の継続+補強）:*
+- **AnandTech** ("Old Game runs too fast"): ユーザーが「**PII 333MHzを組んでShandalarを正しい速度で動かしたい**」と発言。別ユーザーは「**PII 400MHzではAI手番に10分**」＝ゲーム速度として適正域。
+- **VOGONS** (VIA EPIA 5000): VIA C3 533MHz（**≈PII 266MHz相当**）でShandalar用PC構築。→266-400MHzがShandalar動作域。
+- **VOGONS** (MTG Battlemage): 「**Throttle + CPUKillerの組み合わせが最良**」と複数報告。
+- **Tom's Hardware**: Celeron 300Aを「14 Of The Most Legendary Overclocking-Friendly CPUs」に選出。BH6を「Best 440BX Board」に選出。
+
+*Celeron 300AのMTG適合性:*
+Celeron 300A（Mendocino）は128KB on-die L2キャッシュ搭載。PIIの512KB半速キャッシュと比較して、MTGのような小規模プログラムではクロックあたり同等以上の性能。**Celeron 300MHz ≈ PII 300MHz相当** = 動作域（266-400MHz）の中央値。
+
+*SoftMenu III 5段階ハードウェア速度制御（全構成中最強の柔軟性）:*
+
+| FSB設定 | 実効クロック | MTG用途 |
+|---------|-------------|---------|
+| 50MHz | 225MHz | 動作域下限以下（最も安全、最遅） |
+| 66MHz | 300MHz | **定格・動作域中央（推奨開始点）** |
+| 75MHz | 337.5MHz | 動作域中央〜上位 |
+| 83MHz | 375MHz | 動作域上位 |
+| 100MHz | 450MHz | **伝説のOC速度**（SimCity 2000最適・MTGはcpukiller併用） |
+
+＋cpukiller3で各段階をさらにソフトウェア微調整。**ケースを開けずにBIOSだけで5段階、ソフトで無段階** = 全ラウンド全参加者で最も自在な速度制御。
+
+**入手戦略:**
+- **全パーツ国内調達（R3から継続）**: ヤフオク/メルカリ/Amazon.co.jpのみ。eBayゼロ。
+- **CPU (Celeron 300A)**: ヤフオク落札相場¥1,000-4,000、平均¥2,830。¥2,000で十分入手可能。Slot 1版を選定（BH6はSlot 1）。
+- **MB (ABIT BH6)**: ヤフオク落札相場¥520-9,630、平均¥3,302。¥3,500で入手可能。購入前にコンデンサ膨張の写真確認必須。
+- **GPU (Matrox G200)**: ヤフオク落札相場¥550-5,000、平均¥2,555。¥2,000で入手可能。
+- **サウンド (SB Live! CT4780)**: ヤフオク¥451-1,480。OEM品（Dell/HP/NEC）が大量流通。
+- **ストレージ・電源**: Amazon.co.jp新品即日配送。
+- **リキャップ予備費**: Amazon.co.jpで低ESR 105℃品10個セット。BH6到着後に膨張コンデンサがあれば交換。
+
+**リスク評価:**
+
+| リスク | 深刻度 | 軽減策 |
+|---|---|---|
+| BH6コンデンサ劣化（台湾製Jackcon/Teapo） | 中 | リキャップ予備費¥2,000計上。購入前写真確認で膨張ゼロ個体を選定。BH6はOC人気で良品が市場に多い |
+| BH6動作不安定 | 低〜中 | SoftMenu IIIで電圧・FSBを保守的に設定可能。定格66MHz FSBなら安定性リスク極低 |
+| Celeron 300Aの個体差 | 低 | 定格300MHz使用なら個体差は無関係。OC耐性は副次的メリット |
+| Matrox G200のWin98ドライバ | 低 | Matrox公式Win98ドライバあり。VOGONS/PhilsComputerLabで実績多数 |
+| MTGが300MHzで速すぎる | 極低 | 動作域中央。速すぎてもSoftMenu IIIで225MHzまで落とせる |
+
+---
+
+#### 足軽1号 — Round 4提案
+
+**コンセプト**: 「VOGONS実証済み — PII 266MHzはMTG Shandalarのために選ばれた速度」
+
+**Round 3からの改善点:**
+1. **コンデンサ問題への根本回答**: ABIT BH6（台湾系Jackcon/Teapo）→ **AOpen AX6BC（Sanyo日本製コンデンサ）**。HardwareZoneレビューで「populated with high quality Sanyo Electrolytic capacitors」と明記
+2. **足軽3号との同一構成問題を解消**: BH6+PII 333+G400 → **AX6BC+PII 266+ATI Rage Pro**（3パーツ全変更）
+3. **MTG最適速度の根拠を格上げ**: PII 333MHz（AnandTech希望的報告）→ **PII 266MHz（VOGONS直接実行ビルド**）
+4. **コスト削減**: ¥24,000 → **¥17,700**（26%減）
+
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 |
+|---|---|---|---|---|
+| CPU | Intel Pentium II 266MHz (Klamath SL2HC, Slot 1) | https://auctions.yahoo.co.jp/category/list/2084044828/ | ¥500 | 中古 |
+| MB | AOpen AX6BC (Intel 440BX, Slot 1, Sanyo製コンデンサ) | https://auctions.yahoo.co.jp/closedsearch/closedsearch/ax6bc/0/ | ¥3,500 | 中古 |
+| GPU | ATI 3D Rage Pro Turbo AGP 8MB | https://auctions.yahoo.co.jp/search/search/ati%20rage/2084039481/ | ¥1,500 | 中古 |
+| サウンド | Yamaha YMF744B-V PCI | https://auctions.yahoo.co.jp/closedsearch/closedsearch/ymf744/23459/ | ¥2,000 | 中古 |
+| メモリ | PC100 128MB DIMM | https://jp.mercari.com/search?keyword=PC100+128MB+SDRAM | ¥1,000 | 中古 |
+| ストレージ | CF-IDE変換+CF 8GB | https://www.amazon.co.jp/dp/B097BJX34J | ¥3,200 | 新品 |
+| 電源 | ATX 300W新品 | https://www.amazon.co.jp/s?k=ATX電源+300W | ¥4,000 | 新品 |
+| ケース | ATXミドルタワー | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 |
+
+**合計: ¥17,700**（確定値）
+
+**MTGクロック対処（VOGONS実行済みビルド根拠）:**
+- **VOGONS** (VIA EPIA 5000): ユーザーdav3ybが「**MTG Shandalarをプレイするため**」にVIA C3 533MHzシステムを構築 → 「C3 533MHz ≈ **PII 266MHz相当**」。希望ではなく実際に実行されたビルド
+- **AnandTech**: PII 333MHzが適正速度として選定・PII 400MHzで操作可能 → 266MHzは最も安全な動作域下限
+- AX6BCのBIOS FSB変更で66→75→83→100MHz（266→300→332→400MHz）と上方調整可能
+
+PII 266MHz定格で適正速度 → ソフトウェアスロットリング不要。「速すぎたら下げる」より「ちょうどよい速度から始める」が安全。
+
+#### Round 4 暫定比較表
+
+| 参加者 | CPU | MB | GPU | 合計 | 主な強み |
+|---|---|---|---|---|---|
+| 足軽2号 | Celeron 300A | ABIT BH6 | Matrox G200 | **¥20,700** | PC自作史上最も有名OC伝説・SoftMenu III 5段階制御 |
+| 足軽1号 | PII 266MHz | AOpen AX6BC | ATI Rage Pro | **¥17,700** | VOGONS実証済みMTG最適速度・Sanyo日本製コンデンサ |
+| 足軽3号 | PII 266MHz | AOpen AX6BC | ATI Rage Pro | **¥16,500** | 全ラウンド絶対最安値・「適正速度を選ぶ」逆転の発想 |
+
+⚠️ 足軽1号・3号がCPU+MB+GPUで同一構成に2ラウンド連続収束。差異はサウンド（YMF744 vs CMI8738）と価格（¥1,200差）のみ。
+
+**軍師評価待ち（gunshi_task_260_r4）**
+
+### Round 5
 （後続ラウンドで追記）
 
 ---
