@@ -111,21 +111,86 @@ cmd_258調査結果（context/retro-forge.md参照）より:
 
 ### Round 1
 
-**ステータス:** 進行中
+**ステータス:** 評価完了
 
 #### 提案
 
-##### 足軽1号の提案
-（Round 1完了後に記録）
+##### 足軽1号の提案 — 「1998年の夢構成 — 当時の空気をそのまま再現」
 
-##### 足軽2号の提案
-（Round 1完了後に記録）
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 | リスク評価 |
+|---|---|---|---|---|---|
+| CPU | Intel Pentium II 350MHz (SL2U3/SL356) | https://www.ebay.com/itm/114985670938 | ¥3,000 | 中古 | 低 |
+| マザーボード | ASUS P2B Rev.1.10 (Intel 440BX, Slot 1) | https://www.ebay.com/itm/326343503400 | ¥12,000 | 中古 | 中（コンデンサ要確認） |
+| メモリ | PC100 SDRAM 128MB | https://auctions.yahoo.co.jp/search/search/pc100%20128mb/2084039543/ | ¥1,500 | 中古 | 低 |
+| GPU | 3dfx Voodoo3 3000 AGP 16MB | https://www.ebay.com/itm/137104744541 | ¥8,000 | 中古 | 低〜中 |
+| サウンドカード | Yamaha YMF744B-V搭載 PCI | https://page.auctions.yahoo.co.jp/jp/auction/g1059648124 | ¥2,500 | 中古 | 低 |
+| ストレージ | CF-IDE変換 + CF 8GB | Amazon（変換¥1,500+CF¥2,000） | ¥3,500 | 新品 | 低 |
+| 電源 | ATX 300W 新品 | https://www.amazon.co.jp/電源ユニット-300W-399W/s | ¥4,000 | 新品 | 低 |
+| ケース | ATXミドルタワー | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 | 低 |
 
-##### 足軽3号の提案
-（Round 1完了後に記録）
+**合計: 約¥36,500**
+
+**MTGクロック対処:** 二段構え。①Pentium II 350MHzでハード面抑制 ②cpukiller3でCPU使用率40-60%に制限。速すぎる場合はBIOSでFSB 66MHz化（→実効233MHz相当）。
+
+---
+
+##### 足軽2号の提案 — 「信頼性とコスパの両立 — 安心して動く440BXマシン」
+
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 | リスク評価 |
+|---|---|---|---|---|---|
+| CPU | Intel Pentium II 350MHz (SL2WZ) | https://auctions.yahoo.co.jp/category/list/2084044828/ | ¥1,000 | 中古 | 低 |
+| マザーボード | ASUS P3B-F (Intel 440BX, Slot 1) | https://jp.mercari.com/item/m75213689821 | ¥5,000 | 中古 | 中（コンデンサ要確認） |
+| メモリ | PC100 SDRAM 128MB | https://jp.mercari.com/item/m22006260010 | ¥1,000 | 中古 | 低 |
+| GPU | 3dfx Voodoo3 2000 AGP 16MB | https://jp.mercari.com/item/m28851517653 | ¥10,000 | 中古・動作確認済 | 低〜中 |
+| サウンドカード | Creative Sound Blaster Live! (CT4780) | https://jp.mercari.com/item/m84077256022 | ¥2,000 | 中古 | 低 |
+| ストレージ（変換） | CF-IDE 3.5" 40pin変換 | https://www.amazon.co.jp/dp/B097BJX34J | ¥1,200 | 新品 | 低 |
+| ストレージ（CF） | CF 8GB（東芝チップ） | https://www.amazon.co.jp/dp/B0096CGOH6 | ¥2,000 | 新品 | 低 |
+| 電源 | 玄人志向 KRPW-L5-400W/80+ | https://www.amazon.co.jp/dp/B010Q2VN98 | ¥4,500 | 新品 | 低 |
+| ケース | ATXミドルタワー | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 | 低 |
+
+**合計: ¥28,700**
+
+**MTGクロック対処:** Pentium II 350MHzをスイートスポットとして選定。速すぎる場合はcpukiller3またはFSB 66MHz化（→実効233MHz）で対応。
+
+---
+
+##### 足軽3号の提案 — 「堅実安定 — 1998年の王道ゲーミングPC」
+
+| カテゴリ | 型番・製品名 | 入手先URL | 価格（円） | 状態 | リスク評価 |
+|---|---|---|---|---|---|
+| CPU | Intel Pentium II 350MHz (SL2S6) | https://www.ebay.com/p/1705002654 | ¥2,000 | 中古 | 低 |
+| マザーボード | ASUS P2B-B (440BX, Slot 1) | https://auctions.yahoo.co.jp/jp/auction/j1180067050 | ¥5,000 | 中古 | 中（コンデンサ要確認） |
+| メモリ | PC100 SDRAM 128MB | https://auctions.yahoo.co.jp/search/search/pc100%20メモリ/2084039545/ | ¥1,000 | 中古 | 低 |
+| GPU | 3dfx Voodoo3 3000 AGP 16MB | https://www.ebay.com/itm/137104744541 | ¥8,000 | 中古 | 低〜中 |
+| サウンドカード | Creative Sound Blaster Live! (CT4780) | https://www.ebay.com/p/Creative-Sound-Blaster-Live-PCI-SB0410/77235320 | ¥2,000 | 中古 | 低 |
+| ストレージ | CF-IDE変換(変換名人 CFIDE-401LA) + CF 8GB | https://www.amazon.co.jp/dp/B001EIG7YA | ¥3,000 | 新品 | 低 |
+| 電源 | ATX 300-400W 新品 | https://www.amazon.co.jp/s?k=ATX電源+300W | ¥3,000 | 新品 | 低 |
+| ケース | ATXミドルタワー | https://auctions.yahoo.co.jp/category/list/2084047245/ | ¥2,000 | 中古 | 低 |
+
+**合計: 約¥26,000〜¥38,000**（eBay中心最安構成〜国内+高騰時）
+
+**MTGクロック対処:** まず素の350MHzで動作確認→速すぎる場合にcpukiller3で制限→さらに必要ならFSB 66MHz化で233MHz相当。
+
+---
 
 #### 軍師評価
-（Round 1完了後に記録）
+
+**評価日:** 2026-03-18
+
+| 参加者 | コンセプト | MTG互換(30) | 安定性(25) | コスト(20) | 入手性(15) | 雰囲気(10) | **合計** |
+|---|---|---|---|---|---|---|---|
+| 🏆 足軽2号 | 信頼性とコスパの両立 | 24 | 22 | 15 | 13 | 5 | **79** |
+| 足軽1号 | 1998年の夢構成 | 25 | 19 | 11 | 10 | 9 | **74** |
+| 足軽3号 | 堅実安定 | 23 | 17 | 12 | 9 | 7 | **68** |
+
+**Round 1 優勝: 足軽2号** — 入手容易性・信頼性・コストのバランスが最も優秀。
+
+**全体講評:**
+- 3名とも440BX + PII 350MHz + Voodoo3の基本骨格は適切。技術調査を正しく反映
+- 共通弱点: MTGの具体的動作クロック調査が不足、コンデンサ対策が甘い、構成が酷似
+- Round 2指針: MTGコミュニティ動作報告の調査必須、コスト確定値提示、差別化の強化
+
+詳細評価: queue/reports/gunshi_report.yaml 参照
 
 ---
 
