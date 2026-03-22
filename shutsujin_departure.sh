@@ -637,7 +637,7 @@ if [ "$SETUP_ONLY" = false ]; then
 
     # 将軍: CLI Adapter経由でコマンド構築
     _shogun_cli_type="claude"
-    _shogun_cmd="claude --model opus --remote-control --permission-mode bypassPermissions"
+    _shogun_cmd="claude --model opus --remote-control --permission-mode bypassPermissions --name shogun"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _shogun_cli_type=$(get_cli_type "shogun")
         _shogun_cmd=$(build_cli_command "shogun")
@@ -667,7 +667,7 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
     # 家老（pane 0）: CLI Adapter経由でコマンド構築（デフォルト: Sonnet）
     p=$((PANE_BASE + 0))
     _karo_cli_type="claude"
-    _karo_cmd="claude --model sonnet --remote-control --permission-mode bypassPermissions"
+    _karo_cmd="claude --model sonnet --remote-control --permission-mode bypassPermissions --name karo"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _karo_cli_type=$(get_cli_type "karo")
         _karo_cmd=$(build_cli_command "karo")
@@ -688,11 +688,11 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
         # 決戦の陣: CLI Adapter経由（claudeはOpus強制）
         for i in $(seq 1 "$_ASHIGARU_COUNT"); do
             _ashi_cli_type="claude"
-            _ashi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions"
+            _ashi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions --name ashigaru${i}"
             if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _ashi_cli_type=$(get_cli_type "ashigaru${i}")
                 if [ "$_ashi_cli_type" = "claude" ]; then
-                    _ashi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions"
+                    _ashi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions --name ashigaru${i}"
                 else
                     _ashi_cmd=$(build_cli_command "ashigaru${i}")
                 fi
@@ -710,7 +710,7 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
         # 平時の陣: CLI Adapter経由（デフォルト: 全足軽=Sonnet）
         for i in $(seq 1 "$_ASHIGARU_COUNT"); do
             _ashi_cli_type="claude"
-            _ashi_cmd="claude --model sonnet --remote-control --permission-mode bypassPermissions"
+            _ashi_cmd="claude --model sonnet --remote-control --permission-mode bypassPermissions --name ashigaru${i}"
             if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _ashi_cli_type=$(get_cli_type "ashigaru${i}")
                 _ashi_cmd=$(build_cli_command "ashigaru${i}")
@@ -728,7 +728,7 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
 
     # 軍師: Opus Thinking — 戦略立案・設計判断専任
     _gunshi_cli_type="claude"
-    _gunshi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions"
+    _gunshi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions --name gunshi"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _gunshi_cli_type=$(get_cli_type "gunshi")
         _gunshi_cmd=$(build_cli_command "gunshi")
@@ -1006,12 +1006,12 @@ if [ "$SETUP_ONLY" = true ]; then
     echo "  ┌──────────────────────────────────────────────────────────┐"
     echo "  │  # 将軍を召喚                                            │"
     echo "  │  tmux send-keys -t shogun:main \\                         │"
-    echo "  │    'claude --remote-control --permission-mode bypassPermissions' Enter         │"
+    echo "  │    'claude --remote-control --permission-mode bypassPermissions --name shogun' Enter │"
     echo "  │                                                          │"
     echo "  │  # 家老・足軽を一斉召喚                                  │"
     echo "  │  for p in \$(seq $PANE_BASE $((PANE_BASE+8))); do                                 │"
     echo "  │      tmux send-keys -t multiagent:agents.\$p \\            │"
-    echo "  │      'claude --remote-control --permission-mode bypassPermissions' Enter       │"
+    echo "  │      'claude --remote-control --permission-mode bypassPermissions --name <agent>' Enter │"
     echo "  │  done                                                    │"
     echo "  └──────────────────────────────────────────────────────────┘"
     echo ""

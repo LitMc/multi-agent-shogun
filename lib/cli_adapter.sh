@@ -146,7 +146,7 @@ build_cli_command() {
             if [[ -n "$model" ]]; then
                 cmd="$cmd --model $model"
             fi
-            cmd="$cmd --remote-control --permission-mode bypassPermissions"
+            cmd="$cmd --remote-control --permission-mode bypassPermissions --name $agent_id"
             echo "${prefix}${cmd}"
             ;;
         codex)
