@@ -146,7 +146,7 @@ build_cli_command() {
             if [[ -n "$model" ]]; then
                 cmd="$cmd --model $model"
             fi
-            cmd="$cmd --dangerously-skip-permissions"
+            cmd="$cmd --remote-control --permission-mode bypassPermissions"
             echo "${prefix}${cmd}"
             ;;
         codex)
@@ -168,7 +168,7 @@ build_cli_command() {
             echo "$cmd"
             ;;
         *)
-            echo "claude --dangerously-skip-permissions"
+            echo "claude --remote-control --permission-mode bypassPermissions"
             ;;
     esac
 }

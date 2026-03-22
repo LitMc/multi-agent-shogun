@@ -2,6 +2,12 @@
 # agent_kill.sh — Kill and optionally restart a Claude Code agent in a tmux pane
 # Usage: bash scripts/agent_kill.sh <agent_id> [--restart]
 #
+# IMPORTANT: --remote-control --permission-mode bypassPermissions は必須フラグ。
+# これなしで起動した足軽・軍師はファイル操作で許可プロンプトに止まり、
+# 誰も許可を押せないためフリーズする。
+# 初期起動時も必ずこのフラグを使用すること:
+#   claude --model opus --remote-control --permission-mode bypassPermissions
+#
 # Safety: Only kills claude processes that are direct children of the target
 # tmux pane's shell. Will NOT kill arbitrary processes.
 
@@ -60,7 +66,7 @@ if [[ -z "$CLAUDE_PID" ]]; then
     echo "No claude process found as child of shell PID $SHELL_PID"
     if $RESTART; then
         echo "Starting Claude Code..."
-        tmux send-keys -t "$TARGET" "claude --model opus --dangerously-skip-permissions" Enter
+        tmux send-keys -t "$TARGET" "claude --model opus --remote-control --permission-mode bypassPermissions" Enter
         echo "Restart command sent."
     fi
     exit 0
@@ -120,7 +126,7 @@ if $RESTART; then
     # Clear any leftover input, then send command with literal flag to avoid line-wrap issues
     tmux send-keys -t "$TARGET" C-c 2>/dev/null || true
     sleep 0.3
-    tmux send-keys -t "$TARGET" -l "claude --model opus --dangerously-skip-permissions"
+    tmux send-keys -t "$TARGET" -l "claude --model opus --remote-control --permission-mode bypassPermissions"
     sleep 0.3
     tmux send-keys -t "$TARGET" Enter
 
@@ -135,7 +141,7 @@ if $RESTART; then
         fi
         if [[ $attempt -eq 15 ]]; then
             echo "WARNING: Claude Code did not start after 15s. Retrying..."
-            tmux send-keys -t "$TARGET" -l "claude --model opus --dangerously-skip-permissions"
+            tmux send-keys -t "$TARGET" -l "claude --model opus --remote-control --permission-mode bypassPermissions"
             sleep 0.3
             tmux send-keys -t "$TARGET" Enter
             sleep 5

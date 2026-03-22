@@ -937,7 +937,7 @@ echo "  STEP 0: PATHの反映（このシェルにインストール結果を反
 echo "     source ~/.bashrc"
 echo ""
 echo "  STEP A: OAuth認証 + Bypass Permissions の承認（1コマンドで完了）"
-echo "     claude --dangerously-skip-permissions"
+echo "     claude --remote-control --permission-mode bypassPermissions"
 echo ""
 echo "     1. ブラウザが開く → Anthropicアカウントでログイン → CLIに戻る"
 echo "        ※ WSLでブラウザが開かない場合は、表示されるURLをWindows側の"
