@@ -207,8 +207,7 @@ should_throttle_nudge() {
 
     local cooldown_sec="${NUDGE_COOLDOWN_SEC:-60}"
     if [[ "$AGENT_ID" == "shogun" ]]; then
-        # Shogun receives ntfy_received messages from the lord.
-        # These must not be throttled — use minimal cooldown (10s).
+        # Shogun: use minimal cooldown (10s).
         cooldown_sec="${NUDGE_COOLDOWN_SEC_SHOGUN:-10}"
     elif [[ "$effective_cli" == "codex" ]]; then
         cooldown_sec="${NUDGE_COOLDOWN_SEC_CODEX:-300}"
@@ -475,14 +474,6 @@ send_cli_command() {
     # Shogun is controlled by the Lord; keystroke injection can clobber human input.
     if [ "$AGENT_ID" = "shogun" ]; then
         echo "[$(date)] [SKIP] shogun: suppressing CLI command injection ($cmd)" >&2
-        # 改善3: /clear の代わりに ntfy でフォールバック通知
-        # shogunがcontext limit等で応答不能の場合、殿に直接ntfy通知を送る。
-        if [[ "$cmd" == "/clear" ]]; then
-            local unread_ntfy
-            unread_ntfy=$(grep -c 'read: false' "$INBOX" 2>/dev/null || echo "?")
-            bash "$SCRIPT_DIR/scripts/ntfy.sh" "🚨 将軍が${unread_ntfy}件のメッセージに未応答です。確認してください。" shogun 2>/dev/null || true
-            echo "[$(date)] [ntfy-fallback] shogun: sent ntfy notification instead of /clear (unread=${unread_ntfy})" >&2
-        fi
         return 0
     fi
 
@@ -780,7 +771,6 @@ send_wakeup() {
 
     # 優先度2: Agent busy — nudge送信するとEnterが消失するためスキップ
     # Claude Code: Stop hook catches unread at turn end. Skip nudge to avoid Enter loss.
-    # Exception: shogun — ntfy must be delivered immediately regardless of busy state.
     if agent_is_busy && [[ "$AGENT_ID" != "shogun" ]]; then
         local busy_cli_wakeup
         busy_cli_wakeup=$(get_effective_cli_type)
@@ -795,9 +785,6 @@ send_wakeup() {
     if should_throttle_nudge "$unread_count"; then
         return 0
     fi
-
-    # Shogun: deliver nudge via send-keys like other agents.
-    # ntfy messages must reach Claude Code directly.
 
     # 優先度3: tmux send-keys（テキストとEnterを分離 — Codex TUI対策）
     echo "[$(date)] [SEND-KEYS] Sending nudge to $PANE_TARGET for $AGENT_ID" >&2
@@ -1005,7 +992,6 @@ for s in data.get('specials', []):
         # When the agent is busy/thinking, do NOT escalate. Interrupting with Escape or /clear
         # can terminate the current thought. Also pause the escalation timer while busy so we
         # don't immediately jump to Phase 2/3 once it becomes idle.
-        # Exception: shogun — ntfy must be delivered immediately.
         # Safety net: if busy detection persists for >5 min, assume false-busy (stale flag)
         # and force-create idle flag to allow nudge delivery.
         if agent_is_busy && [[ "$AGENT_ID" != "shogun" ]]; then
