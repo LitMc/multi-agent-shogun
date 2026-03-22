@@ -14,19 +14,18 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SESSION="multiagent"
-
-# Agent-to-pane mapping (each agent = own window, pane 0)
-get_pane() {
+# Agent-to-session:pane mapping
+get_target() {
     case "$1" in
-        karo|ashigaru[1-7]|gunshi) echo "$1.0" ;;
+        shogun) echo "shogun:main.0" ;;
+        karo|ashigaru[1-7]|gunshi) echo "multiagent:$1.0" ;;
         *) echo "" ;;
     esac
 }
 
 usage() {
     echo "Usage: $0 <agent_id> [--restart]"
-    echo "  agent_id: karo, ashigaru1-7, gunshi"
+    echo "  agent_id: shogun, karo, ashigaru1-7, gunshi"
     echo "  --restart: restart Claude Code after kill"
     exit 1
 }
@@ -42,14 +41,12 @@ if [[ "${2:-}" == "--restart" ]]; then
 fi
 
 # Validate agent_id
-PANE="$(get_pane "$AGENT_ID")"
-if [[ -z "$PANE" ]]; then
+TARGET="$(get_target "$AGENT_ID")"
+if [[ -z "$TARGET" ]]; then
     echo "ERROR: Unknown agent_id: $AGENT_ID"
-    echo "Valid agents: karo, ashigaru1-7, gunshi"
+    echo "Valid agents: shogun, karo, ashigaru1-7, gunshi"
     exit 1
 fi
-
-TARGET="${SESSION}:${PANE}"
 
 # Get pane shell PID
 SHELL_PID=$(tmux display-message -t "$TARGET" -p '#{pane_pid}' 2>/dev/null) || {
@@ -66,7 +63,7 @@ if [[ -z "$CLAUDE_PID" ]]; then
     echo "No claude process found as child of shell PID $SHELL_PID"
     if $RESTART; then
         echo "Starting Claude Code..."
-        tmux send-keys -t "$TARGET" "claude --model opus --remote-control --permission-mode bypassPermissions" Enter
+        tmux send-keys -t "$TARGET" "claude --model opus --remote-control --permission-mode bypassPermissions --name $AGENT_ID" Enter
         echo "Restart command sent."
     fi
     exit 0
@@ -126,7 +123,7 @@ if $RESTART; then
     # Clear any leftover input, then send command with literal flag to avoid line-wrap issues
     tmux send-keys -t "$TARGET" C-c 2>/dev/null || true
     sleep 0.3
-    tmux send-keys -t "$TARGET" -l "claude --model opus --remote-control --permission-mode bypassPermissions"
+    tmux send-keys -t "$TARGET" -l "claude --model opus --remote-control --permission-mode bypassPermissions --name $AGENT_ID"
     sleep 0.3
     tmux send-keys -t "$TARGET" Enter
 
@@ -141,7 +138,7 @@ if $RESTART; then
         fi
         if [[ $attempt -eq 15 ]]; then
             echo "WARNING: Claude Code did not start after 15s. Retrying..."
-            tmux send-keys -t "$TARGET" -l "claude --model opus --remote-control --permission-mode bypassPermissions"
+            tmux send-keys -t "$TARGET" -l "claude --model opus --remote-control --permission-mode bypassPermissions --name $AGENT_ID"
             sleep 0.3
             tmux send-keys -t "$TARGET" Enter
             sleep 5
