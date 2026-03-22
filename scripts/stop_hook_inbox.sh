@@ -94,6 +94,47 @@ if [ -n "$LAST_MSG" ]; then
     fi
 fi
 
+# ─── 改善2: Karo専用 — cmd完了ntfy自動通知 ───
+# Karoのstop時にshogun_to_karo.yamlで新たにdoneになったcmdを検知してntfyで殿に通知する。
+# 「指示書ルールに依存しない」仕組みとして、stateファイルで差分管理。
+if [ "$AGENT_ID" = "karo" ]; then
+    KARO_YAML="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    NOTIFIED_FILE="/tmp/karo_notified_cmds.txt"
+    if [ -f "$KARO_YAML" ]; then
+        DONE_CMDS=$(python3 -c "
+import yaml, sys
+try:
+    with open(sys.argv[1], 'r') as f:
+        data = yaml.safe_load(f) or {}
+    cmds = data.get('commands', []) or []
+    done_ids = [str(c.get('id','')) for c in cmds if str(c.get('status','')) == 'done' and c.get('id')]
+    print('\n'.join(done_ids))
+except Exception:
+    pass
+" "$KARO_YAML" 2>/dev/null || true)
+        if [ -n "$DONE_CMDS" ]; then
+            if [ ! -f "$NOTIFIED_FILE" ]; then
+                # 初回: 既存doneを全部記録（初回起動時の一括通知を防ぐ）
+                echo "$DONE_CMDS" > "$NOTIFIED_FILE"
+            else
+                NOTIFIED_CMDS=$(cat "$NOTIFIED_FILE")
+                NEW_DONE=""
+                while IFS= read -r cmd_id; do
+                    [ -z "$cmd_id" ] && continue
+                    if ! echo "$NOTIFIED_CMDS" | grep -qF "$cmd_id"; then
+                        NEW_DONE="${NEW_DONE}${cmd_id} "
+                    fi
+                done <<< "$DONE_CMDS"
+                if [ -n "$NEW_DONE" ]; then
+                    for new_cmd_id in $NEW_DONE; do
+                        bash "$SCRIPT_DIR/scripts/ntfy.sh" "✅ ${new_cmd_id} 完了" karo 2>/dev/null || true
+                    done
+                    echo "$DONE_CMDS" > "$NOTIFIED_FILE"
+                fi
+            fi
+        fi
+    fi
+fi
 
 # ─── Check inbox for unread messages ───
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT_ID}.yaml"

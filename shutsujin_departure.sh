@@ -398,6 +398,9 @@ status: idle
 result: null
 EOF
 
+    # ntfy inbox リセット
+    echo "inbox:" > ./queue/ntfy_inbox.yaml
+
     # agent inbox リセット
     for agent in shogun karo $_ASHIGARU_IDS_STR gunshi; do
         echo "messages:" > "./queue/inbox/${agent}.yaml"
@@ -847,7 +850,7 @@ NINJA_EOF
     pkill -f "fswatch.*queue/inbox" 2>/dev/null || true
     sleep 1
 
-    # 将軍のwatcher（inbox受信の自動起床に必要）
+    # 将軍のwatcher（ntfy受信の自動起床に必要）
     # 安全モード: phase2/phase3エスカレーションは無効、timeout周期処理も無効（event-drivenのみ）
     _shogun_watcher_cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
     nohup env ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 ASW_DISABLE_NORMAL_NUDGE=0 \
@@ -882,6 +885,79 @@ NINJA_EOF
     log_info "📜 指示書読み込みは各エージェントが自律実行（CLAUDE.md Session Start）"
     echo ""
 fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 6.7.5: ntfy_inbox 古メッセージ退避（7日より前のprocessed分をアーカイブ）
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ -f ./queue/ntfy_inbox.yaml ]; then
+    _archive_result=$(python3 -c "
+import yaml, sys
+from datetime import datetime, timedelta, timezone
+
+INBOX = './queue/ntfy_inbox.yaml'
+ARCHIVE = './queue/ntfy_inbox_archive.yaml'
+DAYS = 7
+
+with open(INBOX) as f:
+    data = yaml.safe_load(f) or {}
+
+entries = data.get('inbox', []) or []
+if not entries:
+    sys.exit(0)
+
+cutoff = datetime.now(timezone(timedelta(hours=9))) - timedelta(days=DAYS)
+recent, old = [], []
+
+for e in entries:
+    ts = e.get('timestamp', '')
+    try:
+        dt = datetime.fromisoformat(str(ts))
+        if dt < cutoff and e.get('status') == 'processed':
+            old.append(e)
+        else:
+            recent.append(e)
+    except Exception:
+        recent.append(e)
+
+if not old:
+    sys.exit(0)
+
+# Append to archive
+try:
+    with open(ARCHIVE) as f:
+        archive = yaml.safe_load(f) or {}
+except FileNotFoundError:
+    archive = {}
+archive_entries = archive.get('inbox', []) or []
+archive_entries.extend(old)
+with open(ARCHIVE, 'w') as f:
+    yaml.dump({'inbox': archive_entries}, f, allow_unicode=True, default_flow_style=False)
+
+# Write back recent only
+with open(INBOX, 'w') as f:
+    yaml.dump({'inbox': recent}, f, allow_unicode=True, default_flow_style=False)
+
+print(f'{len(old)}件退避 {len(recent)}件保持')
+" 2>/dev/null) || true
+    if [ -n "$_archive_result" ]; then
+        log_info "📱 ntfy_inbox整理: $_archive_result → ntfy_inbox_archive.yaml"
+    fi
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 6.8: ntfy入力リスナー起動
+# ═══════════════════════════════════════════════════════════════════════════════
+NTFY_TOPIC=$(grep 'ntfy_topic:' ./config/settings.yaml 2>/dev/null | awk '{print $2}' | tr -d '"')
+if [ -n "$NTFY_TOPIC" ]; then
+    pkill -f "ntfy_listener.sh" 2>/dev/null || true
+    [ ! -f ./queue/ntfy_inbox.yaml ] && echo "inbox:" > ./queue/ntfy_inbox.yaml
+    nohup bash "$SCRIPT_DIR/scripts/ntfy_listener.sh" &>/dev/null &
+    disown
+    log_info "📱 ntfy入力リスナー起動 (topic: $NTFY_TOPIC)"
+else
+    log_info "📱 ntfy未設定のためリスナーはスキップ"
+fi
+echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 7: 環境確認・完了メッセージ
