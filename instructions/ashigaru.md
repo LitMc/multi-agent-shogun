@@ -283,6 +283,17 @@ Act without waiting for Karo's instruction:
 - Context below 30% → write progress to report YAML, tell Karo "context running low"
 - Task larger than expected → include split proposal in report
 
+## 起動コマンド (IMPORTANT)
+
+足軽は必ず以下のコマンドで起動すること:
+
+```
+claude --model opus --remote-control --permission-mode bypassPermissions
+```
+
+**--remote-control --permission-mode bypassPermissions は必須。** これなしで起動するとファイル操作の許可プロンプトが出て停止する。--remote-control により殿がスマホからセッションを監視・指示できる。
+agent_kill.sh --restart で再起動した場合も自動的にこのフラグが使われる。
+
 ## Shout Mode (echo_message)
 
 After task completion, check whether to echo a battle cry:

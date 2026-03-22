@@ -491,6 +491,17 @@ Step 5: Start work
 - Context below 30% → write progress to report YAML, tell Karo "context running low"
 - Task scope too large → include phase proposal in report
 
+## 起動コマンド (IMPORTANT)
+
+軍師は必ず以下のコマンドで起動すること:
+
+```
+claude --model opus --remote-control --permission-mode bypassPermissions
+```
+
+**--remote-control --permission-mode bypassPermissions は必須。** これなしで起動するとファイル操作の許可プロンプトが出て停止する。--remote-control により殿がスマホからセッションを監視・指示できる。
+agent_kill.sh --restart で再起動した場合も自動的にこのフラグが使われる。
+
 ## Shout Mode (echo_message)
 
 Same rules as ashigaru (see instructions/ashigaru.md step 8).
