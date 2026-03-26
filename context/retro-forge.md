@@ -1,5 +1,9 @@
 # retro-forge プロジェクトコンテキスト
-最終更新: 2026-03-18 (cmd_258 技術調査結果反映)
+最終更新: 2026-03-26 (cmd_299 リポジトリ分離)
+
+> **詳細ドキュメントは https://github.com/LitMc/retro-forge を参照**
+> パーツリスト、購入ガイド、コンペ結果、審議記録等は専用リポジトリに移行済み。
+> ローカルパス: /Users/jgoto/ghq/github.com/LitMc/retro-forge
 
 ## 基本情報
 - **プロジェクトID**: retro-forge
