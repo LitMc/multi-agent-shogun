@@ -17,6 +17,7 @@
 !LICENSE
 !README.md
 !README_ja.md
+!CHANGELOG.md
 !CONTRIBUTING.md
 !SECURITY.md
 
@@ -103,6 +104,7 @@
 !scripts/agent_watchdog.sh
 !scripts/hooks/
 !scripts/hooks/*.sh
+!scripts/dashboard-viewer.py
 
 
 # SayTask (sample template only, not actual data)
@@ -151,6 +153,11 @@
 !skills/shogun-readme-sync/SKILL.md
 !skills/update-shogun/
 !skills/update-shogun/SKILL.md
+!skills/shogun-screenshot/
+!skills/shogun-screenshot/SKILL.md
+!skills/shogun-screenshot/scripts/
+!skills/shogun-screenshot/scripts/*.sh
+!skills/shogun-screenshot/scripts/*.py
 
 # Python venv (explicit deny — whitelist patterns like LICENSE leak through !*/)
 .venv/
@@ -185,9 +192,11 @@ tests/specs/osato_lms_*
 
 # CI/CD
 !.github/
+!.github/FUNDING.yml
 !.github/workflows/
 !.github/workflows/*.yml
 
 # Android companion app
 !android/
 !android/**
+.claude/settings.local.json

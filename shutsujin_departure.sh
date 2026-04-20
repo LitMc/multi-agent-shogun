@@ -6,6 +6,8 @@
 #   ./shutsujin_departure.sh           # 全エージェント起動（前回の状態を維持）
 #   ./shutsujin_departure.sh -c        # キューをリセットして起動（クリーンスタート）
 #   ./shutsujin_departure.sh -s        # セットアップのみ（Claude起動なし）
+#   ./shutsujin_departure.sh --auto-mode-on          # Claude permission auto-approved で起動
+#   ./shutsujin_departure.sh --permission-mode plan  # Claude permission mode を明示指定
 #   ./shutsujin_departure.sh -h        # ヘルプ表示
 
 set -e
@@ -121,6 +123,8 @@ KESSEN_MODE=false
 SHOGUN_NO_THINKING=false
 SILENT_MODE=false
 SHELL_OVERRIDE=""
+# Permission flag (default: dangerously-skip-permissions for backward compat)
+PERMISSION_FLAG="--dangerously-skip-permissions"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -143,6 +147,19 @@ while [[ $# -gt 0 ]]; do
         --shogun-no-thinking)
             SHOGUN_NO_THINKING=true
             shift
+            ;;
+        --auto-mode-on)
+            PERMISSION_FLAG="--permission-mode auto-approved"
+            shift
+            ;;
+        --permission-mode)
+            if [[ -n "$2" && "$2" != -* ]]; then
+                PERMISSION_FLAG="--permission-mode $2"
+                shift 2
+            else
+                echo "エラー: --permission-mode オプションにはモード名を指定してください"
+                exit 1
+            fi
             ;;
         -S|--silent)
             SILENT_MODE=true
@@ -172,6 +189,8 @@ while [[ $# -gt 0 ]]; do
             echo "  -t, --terminal      Windows Terminal で新しいタブを開く"
             echo "  -shell, --shell SH  シェルを指定（bash または zsh）"
             echo "                      未指定時は config/settings.yaml の設定を使用"
+            echo "  --auto-mode-on      Claude を --permission-mode auto-approved で起動"
+            echo "  --permission-mode M Claude の permission mode を明示指定"
             echo "  -S, --silent        サイレントモード（足軽の戦国echo表示を無効化・API節約）"
             echo "                      未指定時はshoutモード（タスク完了時に戦国風echo表示）"
             echo "  -h, --help          このヘルプを表示"
@@ -186,6 +205,8 @@ while [[ $# -gt 0 ]]; do
             echo "  ./shutsujin_departure.sh -c -k         # クリーンスタート＋決戦の陣"
             echo "  ./shutsujin_departure.sh -shell zsh   # zsh用プロンプトで起動"
             echo "  ./shutsujin_departure.sh --shogun-no-thinking  # 将軍のthinkingを無効化（中継特化）"
+            echo "  ./shutsujin_departure.sh --auto-mode-on        # permission auto-approved で起動"
+            echo "  ./shutsujin_departure.sh --permission-mode plan  # permission mode を明示指定"
             echo "  ./shutsujin_departure.sh -S           # サイレントモード（echo表示なし）"
             echo ""
             echo "モデル構成:"
@@ -203,7 +224,7 @@ while [[ $# -gt 0 ]]; do
             echo "  silent（--silent）:   echo表示なし（API節約）"
             echo ""
             echo "エイリアス:"
-            echo "  csst  → cd /mnt/c/tools/multi-agent-shogun && ./shutsujin_departure.sh"
+            echo "  csst  → cd $HOME/multi-agent-shogun && ./shutsujin_departure.sh"
             echo "  css   → tmux attach-session -t shogun"
             echo "  csm   → tmux attach-session -t multiagent"
             echo ""
@@ -637,7 +658,7 @@ if [ "$SETUP_ONLY" = false ]; then
 
     # 将軍: CLI Adapter経由でコマンド構築
     _shogun_cli_type="claude"
-    _shogun_cmd="claude --model opus --remote-control --permission-mode bypassPermissions --name shogun"
+    _shogun_cmd="claude --model opus --remote-control --effort max $PERMISSION_FLAG --name shogun"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _shogun_cli_type=$(get_cli_type "shogun")
         _shogun_cmd=$(build_cli_command "shogun")
@@ -667,7 +688,7 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
     # 家老（pane 0）: CLI Adapter経由でコマンド構築（デフォルト: Sonnet）
     p=$((PANE_BASE + 0))
     _karo_cli_type="claude"
-    _karo_cmd="claude --model sonnet --remote-control --permission-mode bypassPermissions --name karo"
+    _karo_cmd="claude --model sonnet --remote-control --effort max $PERMISSION_FLAG --name karo"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _karo_cli_type=$(get_cli_type "karo")
         _karo_cmd=$(build_cli_command "karo")
@@ -688,11 +709,11 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
         # 決戦の陣: CLI Adapter経由（claudeはOpus強制）
         for i in $(seq 1 "$_ASHIGARU_COUNT"); do
             _ashi_cli_type="claude"
-            _ashi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions --name ashigaru${i}"
+            _ashi_cmd="claude --model opus --remote-control --effort max $PERMISSION_FLAG --name ashigaru${i}"
             if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _ashi_cli_type=$(get_cli_type "ashigaru${i}")
                 if [ "$_ashi_cli_type" = "claude" ]; then
-                    _ashi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions --name ashigaru${i}"
+                    _ashi_cmd="claude --model opus --remote-control --effort max $PERMISSION_FLAG --name ashigaru${i}"
                 else
                     _ashi_cmd=$(build_cli_command "ashigaru${i}")
                 fi
@@ -710,7 +731,7 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
         # 平時の陣: CLI Adapter経由（デフォルト: 全足軽=Sonnet）
         for i in $(seq 1 "$_ASHIGARU_COUNT"); do
             _ashi_cli_type="claude"
-            _ashi_cmd="claude --model sonnet --remote-control --permission-mode bypassPermissions --name ashigaru${i}"
+            _ashi_cmd="claude --model sonnet --remote-control --effort max $PERMISSION_FLAG --name ashigaru${i}"
             if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _ashi_cli_type=$(get_cli_type "ashigaru${i}")
                 _ashi_cmd=$(build_cli_command "ashigaru${i}")
@@ -728,7 +749,7 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
 
     # 軍師: Opus Thinking — 戦略立案・設計判断専任
     _gunshi_cli_type="claude"
-    _gunshi_cmd="claude --model opus --remote-control --permission-mode bypassPermissions --name gunshi"
+    _gunshi_cmd="claude --model opus --remote-control --effort max $PERMISSION_FLAG --name gunshi"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _gunshi_cli_type=$(get_cli_type "gunshi")
         _gunshi_cmd=$(build_cli_command "gunshi")
@@ -1006,12 +1027,12 @@ if [ "$SETUP_ONLY" = true ]; then
     echo "  ┌──────────────────────────────────────────────────────────┐"
     echo "  │  # 将軍を召喚                                            │"
     echo "  │  tmux send-keys -t shogun:main \\                         │"
-    echo "  │    'claude --remote-control --permission-mode bypassPermissions --name shogun' Enter │"
+    echo "  │    'claude --remote-control ${PERMISSION_FLAG} --name shogun' Enter │"
     echo "  │                                                          │"
     echo "  │  # 家老・足軽を一斉召喚                                  │"
     echo "  │  for p in \$(seq $PANE_BASE $((PANE_BASE+8))); do                                 │"
     echo "  │      tmux send-keys -t multiagent:agents.\$p \\            │"
-    echo "  │      'claude --remote-control --permission-mode bypassPermissions --name <agent>' Enter │"
+    echo "  │      'claude --remote-control ${PERMISSION_FLAG} --name <agent>' Enter │"
     echo "  │  done                                                    │"
     echo "  └──────────────────────────────────────────────────────────┘"
     echo ""

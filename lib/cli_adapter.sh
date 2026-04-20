@@ -131,6 +131,7 @@ build_cli_command() {
     model=$(get_agent_model "$agent_id")
     local thinking
     thinking=$(_cli_adapter_read_yaml "cli.agents.${agent_id}.thinking" "")
+    local permission_flag="${PERMISSION_FLAG:---dangerously-skip-permissions}"
 
     # thinking prefix: Claude CLI でのみ有効
     # thinking: true or 未設定 → そのまま（デフォルトでThinking ON）
@@ -146,7 +147,7 @@ build_cli_command() {
             if [[ -n "$model" ]]; then
                 cmd="$cmd --model $model"
             fi
-            cmd="$cmd --remote-control --permission-mode bypassPermissions --name $agent_id"
+            cmd="$cmd --remote-control $permission_flag --name $agent_id"
             echo "${prefix}${cmd}"
             ;;
         codex)
@@ -168,7 +169,7 @@ build_cli_command() {
             echo "$cmd"
             ;;
         *)
-            echo "claude --remote-control --permission-mode bypassPermissions"
+            echo "claude --remote-control $permission_flag"
             ;;
     esac
 }
