@@ -1,27 +1,17 @@
 {
   "hooks": {
-    "PreToolUse": [
+    "SessionStart": [
       {
-        "matcher": "Edit|Write|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/hooks/karo_path_guard.sh",
-            "timeout": 5
+            "command": "bash scripts/session_start_hook.sh",
+            "timeout": 10
           }
         ]
       }
     ],
     "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash scripts/hooks/karo_delegation_check.sh",
-            "timeout": 5
-          }
-        ]
-      },
       {
         "hooks": [
           {
