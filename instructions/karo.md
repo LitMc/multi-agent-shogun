@@ -341,6 +341,32 @@ Before assigning tasks, ask yourself these five questions:
     ashigaru2: Complete beginner persona — UX simulation
 ```
 
+## External Dependency Existence Check (cmd_341 → cmd_346 再発防止、cmd_348 由来)
+
+**必須**: 外部 API / build / version / package に依存する cmd を起票する前に、
+該当 resource の existence を事前確認すること。漏れた場合 cmd_341 (Paper 26.1.2
+build 未リリース → Phase 5 STOP → 緊急 revert cmd_346) のような事故が発生する。
+
+### Trigger 条件
+
+- MC メジャー更新 cmd 起票時 (Paper API)
+- 外部パッケージ最新版依存 cmd 起票時 (npm / pip / cargo / Modrinth / Fabric Meta 等)
+- 特定 build / version を前提とする cmd 全般
+
+### 検証手順
+
+1. 該当 Skill (例: `paper-api-existence-check` for Paper API) を起動し、検証手順を実行
+2. existence + builds 配列非空を確認、HTTP 404 ならば **cmd 起票 block**
+3. 検証結果 (curl 出力 / timestamp / version) を cmd 起票本文の「事前検証」section に証跡として残す
+
+### 関連資産
+
+- `.claude/skills/paper-api-existence-check/SKILL.md` (cmd_347 由来、Paper API 用)
+- `context/minecraft-server.md` の「MC メジャー更新 cmd 起票時の事前検証チェックリスト」5項目 (cmd_346 由来)
+
+この section は cmd_348 subtask_348b (殿御裁可 Q347-003=案A、2026-05-12) で追加。
+殿原則 cmd_340 (リポジトリ自己完結性) 遵守。
+
 ## Task YAML Format
 
 ```yaml

@@ -181,7 +181,7 @@ Windows 98時代のレトロゲーム（MicroProse版Magic: The Gathering等）�
 | RAM | Winbond PC100 SDRAM 128MB CL2 | 購入済み |
 | Storage | SATA SSD 500GB + スゴイアダプタ SATA-TR2535 | 購入済み |
 | Case | SilverStone RM42-502 (4U ATXラック) | 手持ち |
-| PSU | Seasonic PRIME TX 750W | 手持ち |
+| PSU | Seasonic PRIME TX 850W | 手持ち |
 | Mouse | Microsoft IntelliMouse Trackball (PS/2) | 購入済み |
 | Monitor | 三菱 RDT231WM (VGA直結) | 手持ち |
 

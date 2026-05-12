@@ -455,6 +455,25 @@ When QC requests arrive from multiple projects simultaneously:
 3. プロジェクト固有の品質基準（型安全性/ISRルール/UI仕様等）でレビューする
 4. 前のプロジェクトの基準を混用しない
 
+## External Dependency Existence Verification (cmd_348 由来)
+
+家老の起票 cmd を design review / strategic review する際、cmd_341 → cmd_346
+経緯を踏まえ、以下を verdict 判定の必須項目として加えること。
+
+### Review 観点
+
+- 外部 API / build / version / package 依存がある cmd か?
+- 依存先の existence 事前検証 (`paper-api-existence-check` 等の Skill) が
+  起票本文の「事前検証」section に証跡付きで記載されているか?
+- 未記載 or 検証 skip の場合は verdict=FAIL or PASS_WITH_FINDINGS で家老へ差し戻し
+
+### 関連資産
+
+- `.claude/skills/paper-api-existence-check/SKILL.md` (cmd_347 由来)
+- `instructions/karo.md` の「External Dependency Existence Check」section (cmd_348 由来)
+
+この section は cmd_348 subtask_348b (殿御裁可 Q347-003=案A、2026-05-12) で追加。
+
 ## Compaction Recovery
 
 Recover from primary data:

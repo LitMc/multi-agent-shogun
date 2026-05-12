@@ -1,6 +1,27 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/karo_path_guard.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/hooks/karo_delegation_check.sh",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "hooks": [
           {
