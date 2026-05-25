@@ -25,6 +25,12 @@
 !.claude/
 !.claude/settings.json
 
+# Claude Code skills (organizational knowledge, LLM auto-surface 用)
+# 個人情報 7 カテゴリ (IP/ホスト名/ドメイン/アカウント名/token/Discord 識別子/絶対 path) は
+# placeholder 化済 (cmd_369 subtask_369a 由来)。新 skill 追加時は ZERO_HITS 維持必須。
+!.claude/skills/
+!.claude/skills/**
+
 # Instructions (core OSS)
 !instructions/
 !instructions/shogun.md
