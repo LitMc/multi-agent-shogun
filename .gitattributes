@@ -3,3 +3,8 @@
 
 # Shell scripts must use LF
 *.sh text eol=lf
+
+# Instruction templates and generated outputs must use LF to keep
+# Build Instructions Check deterministic across macOS / Linux / Windows.
+instructions/*.md text eol=lf
+instructions/**/*.md text eol=lf
