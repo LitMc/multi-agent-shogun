@@ -273,17 +273,17 @@ load_adapter_with() {
 # build_cli_command テスト
 # =============================================================================
 
-@test "build_cli_command: claude + model → claude --model opus --dangerously-skip-permissions" {
+@test "build_cli_command: claude + model → claude --model opus --remote-control --dangerously-skip-permissions --name shogun" {
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
     result=$(build_cli_command "shogun")
-    [ "$result" = "claude --model opus --dangerously-skip-permissions" ]
+    [ "$result" = "claude --model opus --remote-control --dangerously-skip-permissions --name shogun" ]
 }
 
-@test "build_cli_command: PERMISSION_FLAG override → claude --permission-mode auto-approved" {
+@test "build_cli_command: PERMISSION_FLAG override → claude --remote-control --permission-mode auto-approved --name shogun" {
     PERMISSION_FLAG="--permission-mode auto-approved"
     load_adapter_with "${TEST_TMP}/settings_mixed.yaml"
     result=$(build_cli_command "shogun")
-    [ "$result" = "claude --model opus --permission-mode auto-approved" ]
+    [ "$result" = "claude --model opus --remote-control --permission-mode auto-approved --name shogun" ]
 }
 
 @test "build_cli_command: codex + default model → codex --model sonnet ..." {
@@ -313,13 +313,13 @@ load_adapter_with() {
 @test "build_cli_command: cliセクションなし → claude フォールバック" {
     load_adapter_with "${TEST_TMP}/settings_none.yaml"
     result=$(build_cli_command "ashigaru1")
-    [[ "$result" == claude*--dangerously-skip-permissions ]]
+    [[ "$result" == claude*--remote-control*--dangerously-skip-permissions*--name* ]]
 }
 
 @test "build_cli_command: settings読取失敗 → claude フォールバック" {
     load_adapter_with "/nonexistent/settings.yaml"
     result=$(build_cli_command "ashigaru1")
-    [[ "$result" == claude*--dangerously-skip-permissions ]]
+    [[ "$result" == claude*--remote-control*--dangerously-skip-permissions*--name* ]]
 }
 
 # =============================================================================
@@ -711,7 +711,7 @@ cli:
 YAML
     load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
     result=$(build_cli_command "ashigaru1")
-    [ "$result" = "claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
+    [ "$result" = "claude --model claude-sonnet-4-6 --remote-control --dangerously-skip-permissions --name ashigaru1" ]
 }
 
 @test "build_cli_command: thinking:false → MAX_THINKING_TOKENS=0 prefix" {
@@ -726,7 +726,7 @@ cli:
 YAML
     load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
     result=$(build_cli_command "ashigaru1")
-    [ "$result" = "MAX_THINKING_TOKENS=0 claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
+    [ "$result" = "MAX_THINKING_TOKENS=0 claude --model claude-sonnet-4-6 --remote-control --dangerously-skip-permissions --name ashigaru1" ]
 }
 
 @test "build_cli_command: thinking未設定 → MAX_THINKING_TOKENS=0 なし (デフォルトThinking ON)" {
@@ -740,7 +740,7 @@ cli:
 YAML
     load_adapter_with "${TEST_TMP}/settings_thinking.yaml"
     result=$(build_cli_command "ashigaru1")
-    [ "$result" = "claude --model claude-sonnet-4-6 --dangerously-skip-permissions" ]
+    [ "$result" = "claude --model claude-sonnet-4-6 --remote-control --dangerously-skip-permissions --name ashigaru1" ]
 }
 
 @test "build_cli_command: codex + thinking:false → MAX_THINKING_TOKENS=0 なし (Codexには無関係)" {
