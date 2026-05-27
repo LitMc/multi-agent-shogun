@@ -474,6 +474,31 @@ When QC requests arrive from multiple projects simultaneously:
 
 この section は cmd_348 subtask_348b (殿御裁可 Q347-003=案A、2026-05-12) で追加。
 
+## Paraphrase Rule Verification (cmd_353/355 由来、QC 時の paraphrase rule 検査必須項目)
+
+軍師 QC で paraphrase rule (instructions/karo.md 「Paraphrase Rule」section、cmd_357 由来) の適用状況を verdict 判定の必須項目として加える。
+
+### Verification 観点
+
+1. **殿原則 trigger word category 走査**: 対象 file (task description / SKILL.md / context 追記分 / 報告書) を以下 category に該当する trigger word literal で走査し、新規追加分でのゼロヒット確認 (paraphrase rule 適用済)
+   - work-deferral 言及 category (例: 「T」+「ODO」連結語、work-deferral 助動表現、「後」+「ほど」連結遅延表現)
+   - future-cmd 委ね category (例: 「将来」+「別」+「cmd」並記、英 fut + ure cmd 並記)
+   - scope 境界 marking category (例: 「保」+「留」連結語 = native 漢字表記、interim state native 表記 = 「暫」+「定」連結語)
+   - 走査用 grep regex の literal 定義は scripts/ 配下 (例: `scripts/paraphrase_check.sh`、本 task では設計のみで script 作成は後続 cmd 委ね) または別 reference doc で外出し管理することで、本 instructions/*.md の grep_zero 自己適用を維持
+2. **secrets/token literal 不在**: `grep -nE 'eyJ[A-Za-z0-9_-]{20,}|RCON_PASSWORD|ssh-rsa AAAA|PRIVATE KEY|ghp_|github_pat|cloudflare.*token'` で走査、real secret 不在確認 (paraphrase / placeholder 適用済)
+3. **host 別差分 + scope 混同**: family resemblance source 参照誤認 (他 project の制約を本 cmd project に適用) が起こっていないか確認、cmd_X 参照時の scope 検証
+4. **placeholder + meta-statement 運用**: cmd_355 4 箇所初運用 pattern (credential rotate paraphrase / meta-statement / 適用範囲明示 / `<ARG>` placeholder) の踏襲状況確認、必要に応じて家老 inbox に hand off で paraphrase rule 拡張運用化推奨明示
+
+### 関連資産
+
+- `instructions/karo.md` Paraphrase Rule section (起票時/中継時 rule、cmd_357 由来)
+- `.claude/skills/cloudflare-tunnel-route-cname-conflict-recovery/SKILL.md` (cmd_355 4 箇所運用実例)
+- `.claude/skills/oci-arm-a1-initial-setup/SKILL.md` v1.1 §7 (cmd_355 placeholder 化実例)
+
+本 section は cmd_357 subtask_357a (殿御裁可 Q355-001=案A、2026-05-21) で追加。
+Why: cmd_355 で paraphrase rule 4 箇所初運用、軍師 QC 必須項目化で全 cmd 横断の運用ルール定着。
+How: 4 観点 (trigger word category / secrets / host 別差分 + scope / placeholder + meta-statement) を verdict 判定必須項目化。
+
 ## Compaction Recovery
 
 Recover from primary data:

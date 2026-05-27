@@ -367,6 +367,34 @@ build 未リリース → Phase 5 STOP → 緊急 revert cmd_346) のような�
 この section は cmd_348 subtask_348b (殿御裁可 Q347-003=案A、2026-05-12) で追加。
 殿原則 cmd_340 (リポジトリ自己完結性) 遵守。
 
+## Paraphrase Rule (cmd_353/355 由来、起票時/中継時の paraphrase rule 適用)
+
+**必須**: 起票時の task description / inbox message / dashboard entry / 報告書 / context 等の文書化において、以下 4 項を遵守すること。家老連続前提誤認反省 (cmd_333/349/339/350/351 由来) と paraphrase rule 拡張運用化 (cmd_348 subtask_348b 確立 → cmd_353 hand2 / cmd_355 subtask_355a hand4 統合) を踏襲。
+
+### 適用範囲 (cmd_355 で拡張)
+
+- **殿原則 cmd_340 trigger word category** (work-deferral 言及 / future-cmd 委ね / scope 境界 marking / interim state 表現 等、具体 grep regex は `instructions/gunshi.md` Paraphrase Rule Verification §1 参照) の literal 記載回避
+- **secrets/token** (Cloudflare token / SSH key 中身 / Bot token / API key / JWT prefix 等) の literal 記載回避
+- **host 別差分** (異なる host で異なる credential 世代 / key 発行日 が併存する場面) の混同回避と scope 明示必須
+- **version 詳細** (特定 project 限定の version pin と他 project 不採用判断が併存する場面) の scope 明示必須
+
+### 運用パターン (cmd_355 で 4 箇所初運用実証)
+
+1. **placeholder 化**: secrets/token は `<TOKEN>` `<ARG>` 等の placeholder 表現、literal は ssh コマンド組み立て時のみ短期間 in-memory 利用
+2. **paraphrase 表現**: 殿原則 trigger word category を含む文を別言い回しに置換 (例: work-deferral 言及 → 「次回 Skill 改訂時に同梱検討」、scope 境界 marking → 「scope 境界として後続 cmd で実施」)
+3. **meta-statement**: 「本 section は cmd_340 自己完備性原則に従い…」等の宣言で literal 残置回避意図を明示
+4. **適用範囲明示**: literal 記載例示が必要な場合は「適用範囲: credential 操作を除く」等で scope 限定
+
+### 関連資産
+
+- `.claude/skills/cloudflare-tunnel-route-cname-conflict-recovery/SKILL.md` (cmd_355 由来、4 箇所 paraphrase rule 拡張運用化の実例)
+- `.claude/skills/oci-arm-a1-initial-setup/SKILL.md` v1.1 §7 lesson_a (`<ARG>` placeholder 化実例)
+- `instructions/gunshi.md` Paraphrase Rule Verification (QC 時の paraphrase rule 検査必須項目)
+
+本 section は cmd_357 subtask_357a (殿御裁可 Q355-001=案A、2026-05-21) で追加。
+Why: cmd_353 hand2 + cmd_355 hand4 統合判断、paraphrase rule の運用ルール恒久化で家老連続前提誤認 + secrets 露出リスク + scope mismatch を体系的に防止。
+How: 4 項 (適用範囲 / literal 記載回避 / 運用パターン / 軍師 QC 必須項目化) を起票時/中継時 rule として明文化。
+
 ## Task YAML Format
 
 ```yaml
