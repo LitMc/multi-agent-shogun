@@ -3,7 +3,7 @@
 
 > **詳細ドキュメントは https://github.com/LitMc/retro-forge を参照**
 > パーツリスト、購入ガイド、コンペ結果、審議記録等は専用リポジトリに移行済み。
-> ローカルパス: /Users/jgoto/ghq/github.com/LitMc/retro-forge
+> ローカルパス: ~/ghq/github.com/LitMc/retro-forge
 
 ## 基本情報
 - **プロジェクトID**: retro-forge
