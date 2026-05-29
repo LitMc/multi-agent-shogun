@@ -25,7 +25,7 @@ multi-agent-shogunをupstream/main (yohey-w/multi-agent-shogun) に追従させ�
 
 ## 現在の状態
 
-!`cd /Users/jgoto/multi-agent-shogun && git fetch upstream 2>/dev/null && echo "=== Current branch ===" && git branch --show-current && echo "=== Upstream behind count ===" && git rev-list HEAD..upstream/main --count && echo "=== New upstream commits ===" && git log --oneline HEAD..upstream/main 2>/dev/null | head -20 && echo "=== Local uncommitted changes ===" && git diff --stat 2>/dev/null | tail -5`
+!`cd "$(git rev-parse --show-toplevel)" && git fetch upstream 2>/dev/null && echo "=== Current branch ===" && git branch --show-current && echo "=== Upstream behind count ===" && git rev-list HEAD..upstream/main --count && echo "=== New upstream commits ===" && git log --oneline HEAD..upstream/main 2>/dev/null | head -20 && echo "=== Local uncommitted changes ===" && git diff --stat 2>/dev/null | tail -5`
 
 ## 手順
 

@@ -1,6 +1,6 @@
 # shogun-web-research skill update
 
-- Updated source: `/home/tono/.claude/skills/shogun-web-research/SKILL.md`
+- Updated source: `~/.claude/skills/shogun-web-research/SKILL.md`
 - Task: `subtask_208a` (`cmd_208`)
 - Timestamp: `2026-03-29T11:30:00+09:00`
 
@@ -20,4 +20,4 @@
 
 ## Note
 
-`/home/tono/.claude` is not a Git repository in this environment, so this report records the externally applied skill update in the tracked `multi-agent-shogun` repository.
+`~/.claude` is not a Git repository in this environment, so this report records the externally applied skill update in the tracked `multi-agent-shogun` repository.
