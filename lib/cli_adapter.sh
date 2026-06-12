@@ -277,12 +277,14 @@ get_agent_model() {
             ;;
         *)
             # Claude Code/Codex/Copilot用デフォルトモデル
+            # 殿御下命 2026-05-29: 全エージェントを Opus で起動 (最新追従エイリアス)。
+            # settings.yaml の cli.agents.{id}.model が真の正源。これは未設定時フォールバック。
             case "$agent_id" in
                 shogun)         echo "opus" ;;
-                karo)           echo "sonnet" ;;
+                karo)           echo "opus" ;;
                 gunshi)         echo "opus" ;;
-                ashigaru*)      echo "sonnet" ;;
-                *)              echo "sonnet" ;;
+                ashigaru*)      echo "opus" ;;
+                *)              echo "opus" ;;
             esac
             ;;
     esac

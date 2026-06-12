@@ -685,10 +685,10 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
     # 少し待機（安定のため）
     sleep 1
 
-    # 家老（pane 0）: CLI Adapter経由でコマンド構築（デフォルト: Sonnet）
+    # 家老（pane 0）: CLI Adapter経由でコマンド構築（殿御下命 2026-05-29: Opus）
     p=$((PANE_BASE + 0))
     _karo_cli_type="claude"
-    _karo_cmd="claude --model sonnet --remote-control --effort max $PERMISSION_FLAG --name karo"
+    _karo_cmd="claude --model opus --remote-control --effort max $PERMISSION_FLAG --name karo"
     if [ "$CLI_ADAPTER_LOADED" = true ]; then
         _karo_cli_type=$(get_cli_type "karo")
         _karo_cmd=$(build_cli_command "karo")
@@ -728,10 +728,10 @@ with open(f,'w') as fh: yaml.safe_dump(d, fh, default_flow_style=False, allow_un
         done
         log_info "  └─ 足軽1-${_ASHIGARU_COUNT}（決戦の陣）、召喚完了"
     else
-        # 平時の陣: CLI Adapter経由（デフォルト: 全足軽=Sonnet）
+        # 平時の陣: CLI Adapter経由（殿御下命 2026-05-29: 全足軽=Opus）
         for i in $(seq 1 "$_ASHIGARU_COUNT"); do
             _ashi_cli_type="claude"
-            _ashi_cmd="claude --model sonnet --remote-control --effort max $PERMISSION_FLAG --name ashigaru${i}"
+            _ashi_cmd="claude --model opus --remote-control --effort max $PERMISSION_FLAG --name ashigaru${i}"
             if [ "$CLI_ADAPTER_LOADED" = true ]; then
                 _ashi_cli_type=$(get_cli_type "ashigaru${i}")
                 _ashi_cmd=$(build_cli_command "ashigaru${i}")
