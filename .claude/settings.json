@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/stop_hook_inbox.sh",
+            "timeout": 60
+          }
+        ]
+      }
     ]
   },
   "permissions": {

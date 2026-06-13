@@ -139,12 +139,7 @@ workflow:
     note: "Scan all task YAMLs for blocked_by containing completed task_id. Remove and unblock."
   - step: 11.7
     action: saytask_notify
-    note: |
-      1. ntfy通知: bash scripts/ntfy.sh "✅ cmd_{id}完了: {summary}" karo
-         (ntfy_topic_subに送信。将軍がntfyで殿に最終報告する)
-      2. 将軍inbox報告:
-         bash scripts/inbox_write.sh shogun "✅ cmd_{id}完了: {summary}。dashboard確認されたし。" report_received karo
-         (将軍がntfyで殿に最終通知を行う)
+    note: "Update streaks.yaml and send ntfy notification. See SayTask section."
   - step: 12
     action: check_pending_after_report
     note: |
@@ -163,22 +158,22 @@ files:
   dashboard: dashboard.md
 
 panes:
-  self: multiagent:karo.0
+  self: multiagent:0.0
   ashigaru_default:
-    - { id: 1, pane: "multiagent:ashigaru1.0" }
-    - { id: 2, pane: "multiagent:ashigaru2.0" }
-    - { id: 3, pane: "multiagent:ashigaru3.0" }
-    - { id: 4, pane: "multiagent:ashigaru4.0" }
-    - { id: 5, pane: "multiagent:ashigaru5.0" }
-    - { id: 6, pane: "multiagent:ashigaru6.0" }
-    - { id: 7, pane: "multiagent:ashigaru7.0" }
-  gunshi: { pane: "multiagent:gunshi.0" }
+    - { id: 1, pane: "multiagent:0.1" }
+    - { id: 2, pane: "multiagent:0.2" }
+    - { id: 3, pane: "multiagent:0.3" }
+    - { id: 4, pane: "multiagent:0.4" }
+    - { id: 5, pane: "multiagent:0.5" }
+    - { id: 6, pane: "multiagent:0.6" }
+    - { id: 7, pane: "multiagent:0.7" }
+  gunshi: { pane: "multiagent:0.8" }
   agent_id_lookup: "tmux list-panes -t multiagent -F '#{pane_index}' -f '#{==:#{@agent_id},ashigaru{N}}'"
 
 inbox:
   write_script: "scripts/inbox_write.sh"
   to_ashigaru: true
-  to_shogun: true   # cmd completion reports only (interrupt prevention still applies for other messages)
+  to_shogun: false  # Use dashboard.md instead (interrupt prevention)
 
 parallelization:
   independent_tasks: parallel
@@ -260,10 +255,9 @@ bash scripts/inbox_write.sh ashigaru3 "タスクYAMLを読んで作業開始せ�
 # No sleep needed. All messages guaranteed delivered by inbox_watcher.sh
 ```
 
-### Inbox to Shogun (cmd completion reports only)
+### No Inbox to Shogun
 
-Report via dashboard.md update AND shogun inbox (for cmd completion reports).
-Other messages to shogun remain forbidden (interrupt prevention during lord's input).
+Report via dashboard.md update only. Reason: interrupt prevention during lord's input.
 
 ## Foreground Block Prevention (24-min Freeze Lesson)
 
@@ -296,27 +290,6 @@ Other messages to shogun remain forbidden (interrupt prevention during lord's in
 2. For each cmd: decompose → write YAML → inbox_write → **next cmd immediately**
 3. After all cmds dispatched: **stop** (await inbox wakeup from gunshi)
 4. On wakeup: scan reports → process → check for more pending cmds → stop
-
-### Multi-Project Parallel Operations
-
-When multiple cmds from different projects are pending simultaneously:
-
-| Rule | Detail |
-|------|--------|
-| **逐次配分** | 1つのcmdを完全に配分（全サブタスクYAML作成+inbox_write完了）してから次のcmdに移る |
-| **project意識** | 配分中のcmdのproject名をセッション内で明確に意識する |
-| **projectフィールド必須** | 足軽への全タスクYAMLにprojectフィールドを含める |
-| **dashboard分離** | dashboard更新時はプロジェクト別セクションに記載する（混在禁止） |
-
-**なぜ逐次か**: 並列配分すると、家老のコンテキストでプロジェクトA・Bの詳細が混在し、
-タスク説明の質が低下する。足軽は並行でOK（独立動作）。家老の配分作業だけ逐次。
-
-**逐次配分フロー** (複数project pending時):
-```
-1. project-A の cmd を処理 → 全足軽タスクYAML作成 → inbox_write 完了
-2. → project-B の cmd を処理 → 全足軽タスクYAML作成 → inbox_write 完了
-3. → 全cmd配分完了後にSTOP（足軽の並行実行を待つ）
-```
 
 ## Task Design: Five Questions
 
@@ -404,7 +377,7 @@ task:
   parent_cmd: cmd_001
   bloom_level: L3        # L1-L3=Ashigaru, L4-L6=Gunshi
   description: "Create hello1.md with content 'おはよう1'"
-  target_path: "/mnt/c/tools/multi-agent-shogun/hello1.md"
+  target_path: "hello1.md"  # relative to project root
   echo_message: "🔥 足軽1号、先陣を切って参る！八刃一志！"
   status: assigned
   timestamp: "2026-01-25T12:00:00"
@@ -416,7 +389,7 @@ task:
   bloom_level: L6
   blocked_by: [subtask_001, subtask_002]
   description: "Integrate research results from ashigaru 1 and 2"
-  target_path: "/mnt/c/tools/multi-agent-shogun/reports/integrated_report.md"
+  target_path: "reports/integrated_report.md"  # relative to project root
   echo_message: "⚔️ 足軽3号、統合の刃で斬り込む！"
   status: blocked         # Initial status when blocked_by exists
   timestamp: "2026-01-25T12:00:00"
@@ -575,7 +548,6 @@ Push notifications to the lord's phone via ntfy. Karo manages streaks and notifi
    - 課題・気づき（あれば）
    - ファイルが無ければヘッダー `# 日報 YYYY-MM-DD` 付きで新規作成
 7. Send ntfy notification
-8. 将軍inbox報告: `bash scripts/inbox_write.sh shogun "✅ cmd_{id}完了: {summary}。dashboard確認されたし。" report_received karo`
 
 ### Eat the Frog (today.frog)
 
@@ -692,13 +664,12 @@ When updating dashboard.md with Frog and streak info, use this expanded template
 
 ## ntfy Notification to Lord
 
-After updating dashboard.md, send ntfy notification (sender=karo → ntfy_topic_subに送信):
-- cmd complete: `bash scripts/ntfy.sh "✅ cmd_{id} 完了 — {summary}" karo`
-- error/fail: `bash scripts/ntfy.sh "❌ {subtask} 失敗 — {reason}" karo`
-- action required: `bash scripts/ntfy.sh "🚨 要対応 — {content}" karo`
+After updating dashboard.md, send ntfy notification:
+- cmd complete: `bash scripts/ntfy.sh "✅ cmd_{id} 完了 — {summary}"`
+- error/fail: `bash scripts/ntfy.sh "❌ {subtask} 失敗 — {reason}"`
+- action required: `bash scripts/ntfy.sh "🚨 要対応 — {content}"`
 
-Note: sender引数は "karo" を使う。ntfy_topic_subに送信される。殿への最終通知は将軍inbox経由。
-After ntfy, send cmd completion report to shogun: `bash scripts/inbox_write.sh shogun "✅ cmd_{id}完了: {summary}。dashboard確認されたし。" report_received karo`
+Note: This replaces the need for inbox_write to shogun. ntfy goes directly to Lord's phone.
 
 ### **MANDATORY ntfy Triggers (絶対に送る)**
 
@@ -737,7 +708,7 @@ STEP 2: Write next task YAML first (YAML-first principle)
 STEP 3: Reset pane title (after ashigaru is idle — ❯ visible)
   # pane titleはconfig/settings.yamlの該当agentのmodel値を使う
   model=$(grep -A2 "ashigaru{N}:" config/settings.yaml | grep 'model:' | awk '{print $2}')
-  tmux select-pane -t multiagent:ashigaru{N}.0 -T "$model"
+  tmux select-pane -t multiagent:0.{N} -T "$model"
   Title = MODEL NAME ONLY. No agent name, no task description.
   If model_override active → use that model name
 
@@ -848,7 +819,7 @@ tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'
 tmux list-panes -t multiagent:agents -F '#{pane_index}' -f '#{==:#{@agent_id},ashigaru3}'
 ```
 
-**When to use**: After 2 consecutive delivery failures. Normally use `multiagent:ashigaru{N}.0`.
+**When to use**: After 2 consecutive delivery failures. Normally use `multiagent:0.{N}`.
 
 ## Task Routing: Ashigaru vs. Gunshi
 
@@ -875,7 +846,7 @@ STEP 2: Write task YAML to queue/tasks/gunshi.yaml
   - type: strategy | analysis | design | evaluation | decomposition
   - Include all context_files the Gunshi will need
 STEP 3: Set pane task label
-  tmux set-option -p -t multiagent:gunshi.0 @current_task "戦略立案"
+  tmux set-option -p -t multiagent:0.8 @current_task "戦略立案"
 STEP 4: Send inbox
   bash scripts/inbox_write.sh gunshi "タスクYAMLを読んで分析開始せよ。" task_assigned karo
 STEP 5: Continue dispatching other ashigaru tasks in parallel
@@ -888,7 +859,7 @@ When Gunshi completes:
 1. Read `queue/reports/gunshi_report.yaml`
 2. Use Gunshi's analysis to create/refine ashigaru task YAMLs
 3. Update dashboard.md with Gunshi's findings (if significant)
-4. Reset pane label: `tmux set-option -p -t multiagent:gunshi.0 @current_task ""`
+4. Reset pane label: `tmux set-option -p -t multiagent:0.8 @current_task ""`
 
 ### Gunshi Limitations
 
@@ -934,9 +905,9 @@ These checks supplement Gunshi's QC. They do **not** replace the Ashigaru → Gu
 | Agent | Default Model | Pane | Role |
 |-------|---------------|------|------|
 | Shogun | Opus | shogun:0.0 | Project oversight |
-| Karo | Sonnet | multiagent:karo.0 | Fast task management |
-| Ashigaru 1-7 | (settings.yaml参照) | multiagent:ashigaru{1-7}.0 | Implementation |
-| Gunshi | Opus | multiagent:gunshi.0 | Strategic thinking |
+| Karo | Sonnet | multiagent:0.0 | Fast task management |
+| Ashigaru 1-7 | (settings.yaml参照) | multiagent:0.1-0.7 | Implementation |
+| Gunshi | Opus | multiagent:0.8 | Strategic thinking |
 
 **Default: Assign implementation to ashigaru.** Route strategy/analysis to Gunshi (Opus).
 足軽のモデルは settings.yaml で個別定義。bloom_routing: "auto" 時は Step 6.5 で動的切替を実行せよ。
