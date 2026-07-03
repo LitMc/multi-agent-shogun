@@ -499,6 +499,38 @@ When QC requests arrive from multiple projects simultaneously:
 Why: cmd_355 で paraphrase rule 4 箇所初運用、軍師 QC 必須項目化で全 cmd 横断の運用ルール定着。
 How: 4 観点 (trigger word category / secrets / host 別差分 + scope / placeholder + meta-statement) を verdict 判定必須項目化。
 
+## Simulation Report Reproducibility Verification (cmd_467 由来、シミュ分析レポート QC 時の必須項目)
+
+housing 等の **シミュ結果レポート**（`research/*.md`・分析 doc・`analysis/*_report.md` 等、シミュ計算結果を根拠に
+結論を出す成果物）を QC する際、以下を verdict 判定の必須項目として加える。
+
+### Verification 観点
+
+1. **使用パラメータ記載**: 結論・比較に使った全パラメータが本文に明示されているか（利回りμ・インフレ・物件総額・
+   ローン条件・FIRE 設定・削減シナリオ額 等）。読者が本文だけで「何を前提にした結論か」を把握できること。
+2. **cmd_458 import 形式 JSON 添付**: 殿がそのままツールにインポートし結論を再現・検証できる import 形式 JSON
+   （`params_io` export schema=`housing_sim.v2.params`、新規スキーマ非新設）が添付・参照されているか。
+   複数条件比較（固定 vs 変動・予算×FIRE・削減シナリオ等）は **各条件のパラメータセットが全て** 示されているか。
+3. **★PII 両立**: 完全 JSON（財務絶対額を含む）が **tracked に埋め込まれていない** か
+   （`data/raw`〔gitignored〕or 殿へ直接添付）。tracked 本文は **使用パラメータ一覧（構造/相対/キー）＋data/raw 参照** に
+   留まり、**財務絶対額（円）の残存がゼロ** か（`git ls-files | xargs grep` で確認、pii_policy.md §4 と同じ gate）。
+   `data/raw` が `git add` されていないか。
+4. **既存レポートの順次適用**: 既存レポート（cmd_459/462/465 等）は次回改訂時に順次適用の方針が守られているか
+   （本 cmd で全遡及はしない・改訂対象レポートには適用済か）。
+
+未記載 or 検証 skip の場合は verdict=FAIL or PASS_WITH_FINDINGS で家老へ差し戻し。
+
+### 関連資産
+
+- `housing: docs/report_param_reproducibility.md`（運用note・(a)〜(d)ルール本体・cmd_458 流用手順、cmd_467 由来）
+- `housing: docs/pii_policy.md`（財務絶対額の tracked/data/raw 分離規律、cmd_460/464 由来）
+- `housing: housing_sim/v2/params_io.py`（export/import 単一スキーマ、cmd_458 由来）
+
+本 section は cmd_467 subtask_467a（殿御下命 将軍 msg_114526、2026-07-03）で追加。
+Why: シミュ結果レポートに「使用全パラメータ＋殿が再現・検証できる import 形式 JSON」添付を恒久必須化し、
+軍師 QC で全シミュ分析レポート横断の再現性・PII 両立を担保する。
+How: 4 観点（使用パラメータ記載 / cmd_458 import JSON 添付 / PII 両立 / 既存レポート順次適用）を verdict 判定必須項目化。
+
 ## Compaction Recovery
 
 Recover from primary data:
