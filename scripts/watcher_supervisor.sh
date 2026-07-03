@@ -28,7 +28,10 @@ ensure_inbox_file() {
 
 pane_exists() {
     local pane="$1"
-    tmux list-panes -a -F "#{session_name}:#{window_name}.#{pane_index}" 2>/dev/null | grep -qx "$pane"
+    # Resolve via tmux directly so both "shogun:main" and
+    # "multiagent:agents.N" targets are accepted (an exact-string match
+    # against list-panes output rejected the shogun window target).
+    tmux display-message -t "$pane" -p '#{pane_id}' >/dev/null 2>&1
 }
 
 start_watcher_if_missing() {
@@ -45,7 +48,11 @@ start_watcher_if_missing() {
 
     (
         flock -n 9 || return 0
-        if pgrep -Ef "scripts/inbox_watcher.sh ${agent} ${pane}( |$)" >/dev/null 2>&1; then
+        # NB: no -E flag — BSD/macOS pgrep rejects it ("illegal option -- E"),
+        # which made this dedup silently error out and spawn duplicate watchers
+        # (incl. a second shogun watcher on the live pane). pgrep -f already
+        # treats the pattern as an extended regex on both BSD and GNU. (cmd_466)
+        if pgrep -f "scripts/inbox_watcher.sh ${agent} ${pane}( |$)" >/dev/null 2>&1; then
             return 0
         fi
 
@@ -53,8 +60,23 @@ start_watcher_if_missing() {
             echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] stale watcher detected for ${agent}; starting watcher for expected pane ${pane}" >&2
         fi
 
-        cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "codex")
-        nohup bash scripts/inbox_watcher.sh "$agent" "$pane" "$cli" >> "$log_file" 2>&1 &
+        # Shogun runs in safe mode (event-driven only, no escalation) to match
+        # shutsujin_departure.sh STEP 6.6; respawning without these flags would
+        # re-enable escalation and risk a self-nudge loop on the shogun pane.
+        local env_prefix=""
+        local cli_default="codex"
+        if [ "$agent" = "shogun" ]; then
+            env_prefix="env ASW_DISABLE_ESCALATION=1 ASW_PROCESS_TIMEOUT=0 ASW_DISABLE_NORMAL_NUDGE=0"
+            cli_default="claude"
+        fi
+
+        cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "$cli_default")
+        # 9>&- closes the flock FD in the child. Otherwise the spawned watcher
+        # (and its fswatch/inotifywait grandchildren) inherit the lock and hold
+        # it for the life of the process; when that watcher later dies, an
+        # orphaned fswatch child keeps the lock held (~30s), blocking flock -n 9
+        # on the next loop and preventing the respawn entirely. (cmd_466)
+        nohup $env_prefix bash scripts/inbox_watcher.sh "$agent" "$pane" "$cli" >> "$log_file" 2>&1 9>&- &
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] [START] inbox_watcher started for ${agent} pane=${pane} PID=$!" >&2
     ) 9>"$lockfile"
 }

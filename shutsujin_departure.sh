@@ -938,6 +938,23 @@ NINJA_EOF
 
     log_success "  └─ $((_ASHIGARU_COUNT + 3))エージェント分のinbox_watcher起動完了（将軍+家老+足軽${_ASHIGARU_COUNT}+軍師）"
 
+    # ═══════════════════════════════════════════════════════════════════
+    # STEP 6.6.5: watcher_supervisor 常駐起動（死亡した watcher の自動復活層）
+    # ═══════════════════════════════════════════════════════════════════
+    # inbox_watcher は STEP 6.6 の nohup 単発起動ゆえ、死ぬと誰も復活させない
+    # 単一障害点だった（将軍 watcher が落ちると殿の指示が届かなくなる）。
+    # watcher_supervisor は registry の全 agent（将軍含む）を 5 秒周期で監視し、
+    # 欠けている watcher を自動 respawn する常駐プロセス。リポ内で完結し
+    # （launchd/cron 不使用）、再出陣の度に本 STEP で単一起動される。
+    log_info "🛡️  watcher_supervisor（watcher 自動復活層）を常駐起動中..."
+    # 旧 supervisor を掃除してから単一起動（再出陣時の多重起動防止）
+    pkill -f "scripts/watcher_supervisor.sh" 2>/dev/null || true
+    sleep 1
+    nohup bash "$SCRIPT_DIR/scripts/watcher_supervisor.sh" \
+        >> "$SCRIPT_DIR/logs/watcher_supervisor.log" 2>&1 &
+    disown
+    log_success "  └─ watcher_supervisor 常駐起動完了（watcher 死亡時 5 秒以内に自動 respawn）"
+
     # STEP 6.7 は廃止 — CLAUDE.md Session Start (step 1: tmux agent_id) で各自が自律的に
     # 自分のinstructions/*.mdを読み込む。検証済み (2026-02-08)。
     log_info "📜 指示書読み込みは各エージェントが自律実行（CLAUDE.md Session Start）"

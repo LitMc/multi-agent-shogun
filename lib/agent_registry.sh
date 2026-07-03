@@ -7,6 +7,9 @@
 
 AGENT_REGISTRY_PROJECT_ROOT="${AGENT_REGISTRY_PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 AGENT_REGISTRY_SETTINGS="${AGENT_REGISTRY_SETTINGS:-${SHOGUN_SETTINGS_FILE:-${AGENT_REGISTRY_PROJECT_ROOT}/config/settings.yaml}}"
+# tmux session hosting the non-shogun agents. Overridable for isolated testing
+# (defaults to the live "multiagent" session).
+AGENT_REGISTRY_TMUX_SESSION="${SHOGUN_TMUX_SESSION:-multiagent}"
 
 agent_registry_default_agents() {
     printf '%s\n' \
@@ -89,11 +92,40 @@ agent_registry_agents() {
 }
 
 agent_registry_multiagent_agents() {
+    # Emit non-shogun agents in the CANONICAL pane order used by
+    # shutsujin_departure.sh STEP 6.6: karo, ashigaru1..N (numeric), gunshi,
+    # then any other agents in registry order.
+    #
+    # The raw settings.yaml key order is deliberately NOT used for pane
+    # indexing: departure assigns panes role-first (karo, then the ashigaru
+    # loop, then gunshi), so deriving indices from settings order made
+    # watcher_supervisor compute panes that did not match the live layout
+    # (e.g. gunshi -> agents.1 vs live agents.8), which would have spawned
+    # duplicate, misdirected watchers when woken. (cmd_466)
+    local agents=()
     local agent
     while IFS= read -r agent; do
         [ "$agent" = "shogun" ] && continue
-        printf '%s\n' "$agent"
+        agents+=("$agent")
     done < <(agent_registry_agents)
+
+    # Guard against empty array under `set -u` on bash 3.2 (macOS).
+    [ "${#agents[@]}" -eq 0 ] && return 0
+
+    for agent in "${agents[@]}"; do
+        [ "$agent" = "karo" ] && printf '%s\n' "karo"
+    done
+    printf '%s\n' "${agents[@]}" | grep -E '^ashigaru[0-9]+$' \
+        | sed 's/^ashigaru//' | sort -n | sed 's/^/ashigaru/'
+    for agent in "${agents[@]}"; do
+        [ "$agent" = "gunshi" ] && printf '%s\n' "gunshi"
+    done
+    for agent in "${agents[@]}"; do
+        case "$agent" in
+            karo|gunshi|ashigaru[0-9]*) ;;
+            *) printf '%s\n' "$agent" ;;
+        esac
+    done
 }
 
 agent_registry_multiagent_pane_for_agent() {
@@ -104,7 +136,7 @@ agent_registry_multiagent_pane_for_agent() {
 
     while IFS= read -r agent; do
         if [ "$agent" = "$wanted" ]; then
-            printf 'multiagent:agents.%s\n' "$((pane_base + idx))"
+            printf '%s:agents.%s\n' "$AGENT_REGISTRY_TMUX_SESSION" "$((pane_base + idx))"
             return 0
         fi
         idx=$((idx + 1))
@@ -118,7 +150,11 @@ agent_registry_pane_for_agent() {
     local pane_base="${2:-0}"
 
     if [ "$agent" = "shogun" ]; then
-        printf '%s\n' "shogun:main.0"
+        # Match the live invocation from shutsujin_departure.sh STEP 6.6
+        # (inbox_watcher.sh shogun "shogun:main"), NOT "shogun:main.0";
+        # the trailing pane index broke pgrep dedup against the running
+        # watcher and would have spawned a duplicate. (cmd_466)
+        printf '%s\n' "shogun:main"
         return 0
     fi
 
